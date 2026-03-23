@@ -1,0 +1,68 @@
+name: EMA Saladillo — Scrapers horarios
+
+on:
+  schedule:
+    - cron: '5 * * * *'
+    - cron: '5 11 * * *'
+  workflow_dispatch:
+
+env:
+  SUPA_URL: ${{ secrets.SUPA_URL }}
+  SUPA_KEY: ${{ secrets.SUPA_KEY }}
+
+jobs:
+  scrapers:
+    if: github.event.schedule == '5 * * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependencias Python
+        run: pip install requests beautifulsoup4 pillow numpy urllib3
+
+      - name: Instalar Tesseract OCR
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-eng -qq
+
+      - name: EMA-EET
+        run: python scrapers/snih_saladillo_v3.py
+        continue-on-error: true
+
+      - name: EMA-CFR
+        run: python scrapers/cfr_saladillo.py
+        continue-on-error: true
+
+      - name: EMA-DC
+        run: python scrapers/dc_saladillo.py
+        continue-on-error: true
+
+      - name: EMA-CS
+        run: python scrapers/cs_saladillo.py
+        continue-on-error: true
+
+  ping:
+    if: github.event.schedule == '5 11 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - name: Supabase ping
+        run: python scrapers/supabase_ping.py
+        env:
+          SUPA_URL: ${{ secrets.SUPA_URL }}
+          SUPA_KEY: ${{ secrets.SUPA_KEY }}

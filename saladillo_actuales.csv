@@ -1,0 +1,8 @@
+﻿estacion,codigo,parametro,unidad,valor,fecha_hora_ar,fecha_hora_utc
+284094,4,Velocidad del Viento,km/h,0,21/03/2026 20:00,2026-03-21T23:00:00Z
+284094,18,Humedad,%,99,21/03/2026 20:00,2026-03-21T23:00:00Z
+284094,20,Precipitación (acum.),mm,6,21/03/2026 20:00,2026-03-21T23:00:00Z
+284094,9998,Precipitación Instantánea,mm,0,21/03/2026 20:00,2026-03-21T23:00:00Z
+284094,218,Presión Atmosférica,mBar,999.4,21/03/2026 20:00,2026-03-21T23:00:00Z
+284094,14,Temperatura,°C,12.5,21/03/2026 20:00,2026-03-21T23:00:00Z
+284094,5,Dirección del Viento,°,314,21/03/2026 20:00,2026-03-21T23:00:00Z

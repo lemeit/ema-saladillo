@@ -1,0 +1,31 @@
+# Archivos de diagnóstico y prueba
+test_*.py
+*_resultado.txt
+franja_procesada.jpg
+*.csv
+
+# Versiones antiguas del dashboard
+ema_dashboard.html
+ema_dashboard_v2.html
+ema_dashboard_v3.html
+
+# Scripts viejos
+snih_saladillo_v2.py
+test_cam.py
+test_frecuencia.py
+test_img.py
+test_ocr_dc.py
+test_ocr_dc2.py
+
+# Datos locales
+datos/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Sistema
+.DS_Store
+Thumbs.db

@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMA Saladillo — Red Meteorológica</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Tokens modo oscuro ── */
+:root {
+  --bg:      #0d1117;
+  --surf:    #161b22;
+  --surf2:   #1c2330;
+  --border:  #30363d;
+  --accent:  #58a6ff;
+  --green:   #3fb950;
+  --yellow:  #d29922;
+  --red:     #f85149;
+  --text:    #e6edf3;
+  --muted:   #8b949e;
+  --shadow:  rgba(0,0,0,0.4);
+  --mono:    'Space Mono', monospace;
+  --sans:    'DM Sans', sans-serif;
+}
+
+/* ── Tokens modo claro ── */
+[data-theme="light"] {
+  --bg:      #f6f8fa;
+  --surf:    #ffffff;
+  --surf2:   #f0f2f5;
+  --border:  #d0d7de;
+  --accent:  #0969da;
+  --green:   #1a7f37;
+  --yellow:  #9a6700;
+  --red:     #cf222e;
+  --text:    #1f2328;
+  --muted:   #57606a;
+  --shadow:  rgba(0,0,0,0.1);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  padding-bottom: 60px;
+  transition: background .25s, color .25s;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--surf);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px var(--shadow);
+}
+
+.logo {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--surf);
+  background: var(--accent);
+  padding: 4px 7px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+.header-mid { flex: 1; min-width: 0; }
+.header-mid h1 {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.header-mid p {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* ── Selector de estación ── */
+.est-sel {
+  display: flex;
+  background: var(--surf2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+}
+.est-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+.est-btn.active {
+  background: var(--accent);
+  color: var(--surf);
+}
+.est-btn:not(.active):hover { color: var(--text); background: var(--border); }
+
+/* ── Toggle día/noche ── */
+.theme-btn {
+  background: var(--surf2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  width: 32px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.theme-btn:hover { background: var(--border); }
+
+/* ── Status dot ── */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+.dot.ok    { background: var(--green); animation: pulse 2s ease-in-out infinite; }
+.dot.error { background: var(--red); animation: none; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+/* ── Nav ── */
+.nav {
+  background: var(--surf);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav::-webkit-scrollbar { display: none; }
+.nav-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 13px;
+  padding: 9px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .15s, border-color .15s;
+}
+.nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.nav-btn:hover:not(.active) { color: var(--text); }
+
+/* ── Main ── */
+.main { max-width: 1100px; margin: 0 auto; padding: 20px; }
+.section { display: none; }
+.section.active { display: block; }
+
+/* ── Badge ── */
+.badge-warn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(154,103,0,.1);
+  border: 1px solid rgba(154,103,0,.25);
+  color: var(--yellow);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+[data-theme="light"] .badge-warn {
+  background: rgba(154,103,0,.08);
+  border-color: rgba(154,103,0,.3);
+}
+
+/* ── Cards ── */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.card {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  transition: border-color .2s, transform .15s, box-shadow .2s;
+}
+.card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow);
+}
+.card-ico  { font-size: 18px; margin-bottom: 8px; }
+.card-lbl  { font-size: 10px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin-bottom: 6px; }
+.card-val  { font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--accent); line-height: 1; }
+.card-unit { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-left: 2px; }
+.card-sub  { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 5px; }
+.card.no-data .card-val { font-size: 12px; color: var(--muted); font-family: var(--sans); font-weight: 400; }
+
+/* ── Tabla ── */
+.table-wrap {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.table-hdr {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.table-hdr h2 { font-size: 13px; font-weight: 500; flex: 1; }
+.sel {
+  background: var(--surf2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+table { width: 100%; border-collapse: collapse; }
+th {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted);
+  text-align: left;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surf2);
+}
+td {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surf2); }
+td.num { color: var(--accent); }
+td.muted { color: var(--muted); font-size: 11px; }
+
+/* ── Chart wrap ── */
+.chart-wrap {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.chart-hdr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.chart-hdr h2 { font-size: 13px; font-weight: 500; flex: 1; }
+canvas { width: 100% !important; }
+
+/* ── Info ── */
+.info-bar {
+  margin-top: 24px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.9;
+}
+
+.loader {
+  text-align: center;
+  padding: 36px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── Comparativa ── */
+.comp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.comp-card {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.comp-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surf2);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.comp-body { padding: 12px 14px; }
+.comp-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.comp-row:last-child { border-bottom: none; }
+.comp-param { color: var(--muted); }
+.comp-val   { color: var(--text); font-weight: 700; }
+
+@media (max-width: 600px) {
+  .main { padding: 12px; }
+  .card-val { font-size: 20px; }
+  .header-mid h1 { font-size: 12px; }
+  .comp-grid { grid-template-columns: 1fr; }
+  .est-btn { font-size: 9px; padding: 4px 7px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">EMA</div>
+  <div class="header-mid">
+    <h1 id="h-titulo">EMA Saladillo — Red Meteorológica</h1>
+    <p id="h-sub">EEST N°1 · CFR · Saladillo, Buenos Aires</p>
+  </div>
+  <div class="header-right">
+    <div class="est-sel">
+      <button class="est-btn active" onclick="setEstacion('eet',this)" title="EEST N°1 Gral. Savio">EET N°1</button>
+      <button class="est-btn" onclick="setEstacion('cfr',this)" title="CFR Saladillo">CFR</button>
+      <button class="est-btn" onclick="setEstacion('dc',this)" title="Defensa Civil">DC</button>
+      <button class="est-btn" onclick="setEstacion('comp',this)" title="Comparativa">⇌</button>
+    </div>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar modo">🌙</button>
+    <div class="status">
+      <div class="dot" id="dot"></div>
+      <span id="status-txt" style="display:none"></span>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showTab('actuales',this)">Actuales</button>
+  <button class="nav-btn" onclick="showTab('historial',this)">Historial</button>
+  <button class="nav-btn" onclick="showTab('grafico',this)">Gráfico</button>
+  <button class="nav-btn" onclick="showTab('rosa',this)">Rosa de vientos</button>
+  <button class="nav-btn" onclick="showTab('mapa',this)">Mapa</button>
+</div>
+
+<div class="main">
+
+  <!-- ACTUALES -->
+  <div class="section active" id="tab-actuales">
+    <div class="badge-warn">⚠ datos sin validar — operativos en tiempo útil</div>
+    <div id="cards-wrap">
+      <div class="loader">Consultando datos...</div>
+    </div>
+    <div class="info-bar" id="info-bar">
+      Fuente EET N°1: SNIH / INA · snih.hidricosargentina.gob.ar · Licencia Creative Commons<br>
+      Fuente CFR: Davis Instruments · ema.cfrsaladillo.edu.ar<br>
+      Almacenamiento: Supabase · actualización horaria · Proyecto EEST N°1 Saladillo
+    </div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="section" id="tab-historial">
+    <div class="table-wrap">
+      <div class="table-hdr">
+        <h2 id="hist-titulo">Registros recientes</h2>
+        <select class="sel" id="sel-param" onchange="cargarHistorial()">
+          <option value="Temperatura">Temperatura</option>
+          <option value="Humedad">Humedad</option>
+          <option value="Lluvia Diaria">Lluvia</option>
+          <option value="Presion Barometrica">Presión</option>
+          <option value="Velocidad del Viento">Velocidad viento</option>
+        </select>
+        <select class="sel" id="sel-limit" onchange="cargarHistorial()">
+          <option value="48">48 reg.</option>
+          <option value="100">100 reg.</option>
+          <option value="200">200 reg.</option>
+        </select>
+      </div>
+      <div id="tabla-wrap"><div class="loader">—</div></div>
+    </div>
+  </div>
+
+  <!-- GRÁFICO -->
+  <div class="section" id="tab-grafico">
+    <div class="chart-wrap">
+      <div class="chart-hdr">
+        <h2>Serie temporal</h2>
+        <select class="sel" id="sel-param-chart" onchange="cargarGrafico()">
+          <option value="Temperatura">Temperatura</option>
+          <option value="Humedad">Humedad</option>
+          <option value="Lluvia Diaria">Lluvia diaria</option>
+          <option value="Presion Barometrica">Presión</option>
+          <option value="Velocidad del Viento">Velocidad viento</option>
+        </select>
+        <select class="sel" id="sel-limit-chart" onchange="cargarGrafico()">
+          <option value="48">48 h</option>
+          <option value="168">7 días</option>
+          <option value="720">30 días</option>
+        </select>
+      </div>
+      <canvas id="chart" height="260"></canvas>
+    </div>
+  </div>
+
+  <!-- ROSA -->
+  <div class="section" id="tab-rosa">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="chart-wrap">
+        <div class="chart-hdr">
+          <h2>Frecuencia por rumbo</h2>
+          <select class="sel" id="sel-limit-rosa" onchange="cargarRosa()">
+            <option value="48">48 h</option>
+            <option value="168">7 días</option>
+            <option value="720">30 días</option>
+          </select>
+        </div>
+        <canvas id="chart-rosa" height="280"></canvas>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:8px;text-align:center">Horas que sopló desde cada rumbo</p>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-hdr"><h2>Velocidad media por rumbo</h2></div>
+        <canvas id="chart-vel-rosa" height="280"></canvas>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:8px;text-align:center">Promedio (km/h) por dirección</p>
+      </div>
+    </div>
+    <div class="chart-wrap" style="margin-top:14px">
+      <div class="chart-hdr">
+        <h2>Velocidad del viento en el tiempo</h2>
+        <select class="sel" id="sel-limit-viento" onchange="cargarVientoTemporal()">
+          <option value="48">48 h</option>
+          <option value="168">7 días</option>
+        </select>
+      </div>
+      <canvas id="chart-viento" height="180"></canvas>
+    </div>
+  </div>
+
+  <!-- MAPA -->
+  <div class="section" id="tab-mapa">
+    <div class="chart-wrap" style="padding:0;overflow:hidden;border-radius:10px">
+      <div id="mapa-container" style="height:420px;width:100%"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px" id="mapa-cards"></div>
+  </div>
+
+</div><!-- /main -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+/* ═══════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════ */
+const SUPA_URL = "https://kpymhaixankylrzwwqge.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtweW1oYWl4YW5reWxyend3cWdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDk1NjksImV4cCI6MjA4OTMyNTU2OX0.Jy6msjgC0BXpHscOoWnmpD6O6Ax7OAj41PSMutKlDAY";
+
+const ESTACIONES = {
+  eet: {
+    tabla:  "mediciones_ema",
+    nombre: "EET N°1 — Estación 4094",
+    sub:    "Red RMET · SNIH/INA · Saladillo",
+    campoParam: "codigo",    // filtra por código numérico
+    campofecha: "fecha_hora_utc",
+    params: [
+      { id:14,  nombre:"Temperatura",         unidad:"°C",   dec:1, ico:"🌡️" },
+      { id:18,  nombre:"Humedad",             unidad:"%",    dec:0, ico:"💧" },
+      { id:20,  nombre:"Precipitación",       unidad:"mm",   dec:2, ico:"🌧️" },
+      { id:218, nombre:"Presión",             unidad:"mBar", dec:1, ico:"📊" },
+      { id:4,   nombre:"Vel. Viento",         unidad:"km/h", dec:1, ico:"💨" },
+      { id:5,   nombre:"Dir. Viento",         unidad:"°",    dec:0, ico:"🧭", rosa:true },
+      { id:9998,nombre:"Prec. Instantánea",   unidad:"mm",   dec:2, ico:"🌂" },
+    ],
+    paramHistorial: { "Temperatura":14, "Humedad":18, "Lluvia Diaria":20, "Presion Barometrica":218, "Velocidad del Viento":4 },
+    paramDirViento: 5,
+    paramVelViento: 4,
+  },
+  cfr: {
+    tabla:  "mediciones_cfr",
+    nombre: "CFR Saladillo — Davis Instruments",
+    sub:    "ema.cfrsaladillo.edu.ar · Saladillo",
+    campoParam: "parametro",  // filtra por nombre
+    campofecha: "insertado_en",
+    params: [
+      { id:"Temperatura",        nombre:"Temperatura",      unidad:"°C",   dec:1, ico:"🌡️" },
+      { id:"Humedad",            nombre:"Humedad",          unidad:"%",    dec:0, ico:"💧" },
+      { id:"Lluvia Diaria",      nombre:"Lluvia diaria",    unidad:"mm",   dec:2, ico:"🌧️" },
+      { id:"Presion Barometrica",nombre:"Presión",          unidad:"hPa",  dec:1, ico:"📊" },
+      { id:"Velocidad del Viento",nombre:"Vel. Viento",     unidad:"km/h", dec:1, ico:"💨" },
+      { id:"Direccion del Viento",nombre:"Dir. Viento",     unidad:"°",    dec:0, ico:"🧭", rosa:true },
+      { id:"Radiacion Solar",    nombre:"Radiación solar",  unidad:"W/m²", dec:0, ico:"☀️" },
+      { id:"Punto de Rocio",     nombre:"Punto de rocío",   unidad:"°C",   dec:1, ico:"🌫️" },
+    ],
+    paramHistorial: { "Temperatura":"Temperatura", "Humedad":"Humedad", "Lluvia Diaria":"Lluvia Diaria", "Presion Barometrica":"Presion Barometrica", "Velocidad del Viento":"Velocidad del Viento" },
+    paramDirViento: "Direccion del Viento",
+    paramVelViento: "Velocidad del Viento",
+  },
+  dc: {
+    tabla:  "mediciones_dc",
+    nombre: "Defensa Civil — Davis Instruments",
+    sub:    "defensacivil.saladillo.gob.ar · Aeródromo Saladillo",
+    campoParam: "parametro",
+    campofecha: "insertado_en",
+    lat: -35.60000, lon: -59.80000,
+    params: [
+      { id:"Temperatura",         nombre:"Temperatura",      unidad:"°C",   dec:1, ico:"🌡️" },
+      { id:"Temperatura Maxima",  nombre:"Temp. máxima",     unidad:"°C",   dec:1, ico:"🔺" },
+      { id:"Temperatura Minima",  nombre:"Temp. mínima",     unidad:"°C",   dec:1, ico:"🔻" },
+      { id:"Humedad",             nombre:"Humedad",          unidad:"%",    dec:0, ico:"💧" },
+      { id:"Presion",             nombre:"Presión",          unidad:"hPa",  dec:1, ico:"📊" },
+      { id:"Velocidad Viento",    nombre:"Vel. Viento",      unidad:"km/h", dec:1, ico:"💨" },
+      { id:"Rafaga",              nombre:"Ráfaga",           unidad:"km/h", dec:1, ico:"🌬️" },
+      { id:"Direccion Viento",    nombre:"Dir. Viento",      unidad:"°",    dec:0, ico:"🧭", rosa:true },
+      { id:"Lluvia Acumulada",    nombre:"Lluvia acumulada", unidad:"mm",   dec:2, ico:"🌧️" },
+      { id:"Punto de Rocio",      nombre:"Punto de rocío",   unidad:"°C",   dec:1, ico:"🌫️" },
+    ],
+    paramHistorial: { "Temperatura":"Temperatura", "Humedad":"Humedad", "Lluvia Diaria":"Lluvia Acumulada", "Presion Barometrica":"Presion", "Velocidad del Viento":"Velocidad Viento" },
+    paramDirViento: "Direccion Viento",
+    paramVelViento: "Velocidad Viento",
+  }
+};
+
+let estActual = "eet";
+const RUMBOS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
+function gradosARosa(g) { return RUMBOS[Math.round(g/22.5)%16]; }
+
+/* ═══════════════════════════════════════════
+   TEMA
+═══════════════════════════════════════════ */
+function toggleTheme() {
+  const html = document.documentElement;
+  const dark = html.getAttribute("data-theme") === "dark";
+  html.setAttribute("data-theme", dark ? "light" : "dark");
+  document.getElementById("theme-btn").textContent = dark ? "🌙" : "☀️";
+  localStorage.setItem("ema-theme", dark ? "light" : "dark");
+  // Si el mapa está visible, recargar tile
+  if (mapaInst && document.getElementById("tab-mapa").classList.contains("active")) {
+    cargarMapa();
+  }
+}
+(function initTheme() {
+  const saved = localStorage.getItem("ema-theme");
+  if (saved) {
+    document.documentElement.setAttribute("data-theme", saved);
+    document.getElementById("theme-btn").textContent = saved === "dark" ? "🌙" : "☀️";
+  }
+})();
+
+/* ═══════════════════════════════════════════
+   SUPABASE
+═══════════════════════════════════════════ */
+async function supaFetch(tabla, query) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${tabla}?${query}`, {
+    headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}` }
+  });
+  if (!r.ok) throw new Error(`Supabase ${r.status}`);
+  return r.json();
+}
+
+function setStatus(estado, txt) {
+  document.getElementById("dot").className = "dot " + (estado==="ok"?"ok":estado==="error"?"error":"");
+  const s = document.getElementById("status-txt");
+  s.textContent = txt;
+  s.style.display = txt ? "inline" : "none";
+}
+
+/* ═══════════════════════════════════════════
+   ESTACIÓN
+═══════════════════════════════════════════ */
+function setEstacion(id, btn) {
+  estActual = id;
+  document.querySelectorAll(".est-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+
+  if (id === "comp") {
+    cargarComparativa();
+    return;
+  }
+
+  const est = ESTACIONES[id];
+  document.getElementById("h-titulo").textContent = est.nombre;
+  document.getElementById("h-sub").textContent    = est.sub;
+
+  // Actualizar opciones del selector historial/gráfico según estación
+  const paramKeys = Object.keys(est.paramHistorial);
+  ["sel-param","sel-param-chart"].forEach(selId => {
+    const sel = document.getElementById(selId);
+    const val = sel.value;
+    sel.innerHTML = paramKeys.map(k => `<option value="${k}">${k}</option>`).join("");
+    if (paramKeys.includes(val)) sel.value = val;
+  });
+
+  const tabActivo = document.querySelector(".nav-btn.active")?.getAttribute("onclick")?.match(/'(\w+)'/)?.[1];
+  if (tabActivo === "actuales" || !tabActivo) cargarActuales();
+  else if (tabActivo === "historial") cargarHistorial();
+  else if (tabActivo === "grafico")   cargarGrafico();
+  else if (tabActivo === "rosa")      { cargarRosa(); cargarVientoTemporal(); }
+}
+
+/* ═══════════════════════════════════════════
+   ACTUALES
+═══════════════════════════════════════════ */
+async function cargarActuales() {
+  if (estActual === "comp") { cargarComparativa(); return; }
+  setStatus("loading","");
+  document.getElementById("cards-wrap").innerHTML = '<div class="loader">Consultando...</div>';
+
+  const est = ESTACIONES[estActual];
+  try {
+    const rows = await supaFetch(est.tabla,
+      `select=${est.campoParam},valor,fecha_hora_ar,unidad,insertado_en` +
+      `&order=${est.campofecha}.desc&limit=100`
+    );
+
+    // Último dato por parámetro
+    const ultimos = {};
+    for (const r of rows) {
+      const key = r[est.campoParam];
+      if (!(key in ultimos)) ultimos[key] = r;
+    }
+
+    const html = est.params.map(p => {
+      const r    = ultimos[p.id];
+      const noData = !r || r.valor === null;
+      if (noData) return `
+        <div class="card no-data">
+          <div class="card-ico">${p.ico}</div>
+          <div class="card-lbl">${p.nombre}</div>
+          <div class="card-val">sin dato</div>
+        </div>`;
+
+      const v   = parseFloat(r.valor);
+      const vStr = v.toFixed(p.dec);
+      const sub  = p.rosa ? gradosARosa(v) : "";
+      const fecha = r.fecha_hora_ar || "—";
+
+      return `
+        <div class="card">
+          <div class="card-ico">${p.ico}</div>
+          <div class="card-lbl">${p.nombre}</div>
+          <div><span class="card-val">${vStr}</span><span class="card-unit">${p.unidad}</span></div>
+          ${sub ? `<div class="card-sub">${sub}</div>` : ""}
+          <div class="card-sub">${fecha}</div>
+        </div>`;
+    }).join("");
+
+    document.getElementById("cards-wrap").innerHTML =
+      `<div class="cards-grid">${html}</div>`;
+    setStatus("ok", rows[0]?.fecha_hora_ar || "");
+
+  } catch(e) {
+    document.getElementById("cards-wrap").innerHTML =
+      `<div class="loader" style="color:var(--red)">Error: ${e.message}</div>`;
+    setStatus("error","error");
+  }
+}
+
+/* ═══════════════════════════════════════════
+   COMPARATIVA
+═══════════════════════════════════════════ */
+async function cargarComparativa() {
+  document.getElementById("cards-wrap").innerHTML = '<div class="loader">Cargando comparativa...</div>';
+  try {
+    const [rowsEet, rowsCfr] = await Promise.all([
+      supaFetch("mediciones_ema", "select=codigo,valor,fecha_hora_ar&order=fecha_hora_utc.desc&limit=50"),
+      supaFetch("mediciones_cfr", "select=parametro,valor,fecha_hora_ar&order=insertado_en.desc&limit=50"),
+    ]);
+
+    const ult = (rows, key) => {
+      const m = {}; rows.forEach(r => { const k=r[key]; if(!(k in m)) m[k]=r; }); return m;
+    };
+    const uEet = ult(rowsEet, "codigo");
+    const uCfr = ult(rowsCfr, "parametro");
+
+    const pares = [
+      { lbl:"Temperatura", eetKey:14, cfrKey:"Temperatura", uni:"°C", dec:1 },
+      { lbl:"Humedad",     eetKey:18, cfrKey:"Humedad",     uni:"%",  dec:0 },
+      { lbl:"Presión",     eetKey:218,cfrKey:"Presion Barometrica", uni:"hPa/mBar", dec:1 },
+      { lbl:"Vel. viento", eetKey:4,  cfrKey:"Velocidad del Viento", uni:"km/h", dec:1 },
+      { lbl:"Lluvia",      eetKey:20, cfrKey:"Lluvia Diaria", uni:"mm", dec:2 },
+    ];
+
+    const rowsHtml = pares.map(p => {
+      const ve = uEet[p.eetKey]?.valor;
+      const vc = uCfr[p.cfrKey]?.valor;
+      const fmtEet = ve !== undefined ? `${parseFloat(ve).toFixed(p.dec)} ${p.uni.split('/')[0]}` : "—";
+      const fmtCfr = vc !== undefined ? `${parseFloat(vc).toFixed(p.dec)} ${p.uni.split('/')[1]||p.uni.split('/')[0]}` : "—";
+      return `<div class="comp-row">
+        <span class="comp-param">${p.lbl}</span>
+        <span class="comp-val">${fmtEet}</span>
+        <span class="comp-val">${fmtCfr}</span>
+      </div>`;
+    }).join("");
+
+    const tEet = rowsEet[0]?.fecha_hora_ar || "—";
+    const tCfr = rowsCfr[0]?.fecha_hora_ar || "—";
+
+    document.getElementById("cards-wrap").innerHTML = `
+      <div style="margin-bottom:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="comp-card">
+            <div class="comp-header">EET N°1 — Est. 4094 · RMET/SNIH</div>
+            <div class="comp-body">
+              ${ESTACIONES.eet.params.map(p => {
+                const r = (() => { const m={}; rowsEet.forEach(r=>{if(!(r.codigo in m))m[r.codigo]=r;}); return m; })[p.id];
+                const val = uEet[p.id]?.valor;
+                const vStr = val !== undefined ? `${parseFloat(val).toFixed(p.dec)} ${p.unidad}` : "—";
+                return `<div class="comp-row"><span class="comp-param">${p.ico} ${p.nombre}</span><span class="comp-val">${vStr}</span></div>`;
+              }).join("")}
+              <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:8px">↻ ${tEet}</div>
+            </div>
+          </div>
+          <div class="comp-card">
+            <div class="comp-header">CFR Saladillo — Davis Instruments</div>
+            <div class="comp-body">
+              ${ESTACIONES.cfr.params.map(p => {
+                const val = uCfr[p.id]?.valor;
+                const vStr = val !== undefined ? `${parseFloat(val).toFixed(p.dec)} ${p.unidad}` : "—";
+                return `<div class="comp-row"><span class="comp-param">${p.ico} ${p.nombre}</span><span class="comp-val">${vStr}</span></div>`;
+              }).join("")}
+              <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:8px">↻ ${tCfr}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    setStatus("ok","");
+  } catch(e) {
+    document.getElementById("cards-wrap").innerHTML =
+      `<div class="loader" style="color:var(--red)">Error: ${e.message}</div>`;
+    setStatus("error","error");
+  }
+}
+
+/* ═══════════════════════════════════════════
+   HISTORIAL
+═══════════════════════════════════════════ */
+async function cargarHistorial() {
+  if (estActual === "comp") return;
+  const est   = ESTACIONES[estActual];
+  const param = document.getElementById("sel-param").value;
+  const limit = document.getElementById("sel-limit").value;
+  const pid   = est.paramHistorial[param];
+
+  document.getElementById("tabla-wrap").innerHTML = '<div class="loader">Cargando...</div>';
+  try {
+    const q = est.campoParam === "codigo"
+      ? `select=fecha_hora_ar,valor,unidad&codigo=eq.${pid}&order=fecha_hora_utc.desc&limit=${limit}`
+      : `select=fecha_hora_ar,valor,unidad&parametro=eq.${encodeURIComponent(pid)}&order=insertado_en.desc&limit=${limit}`;
+
+    const rows = await supaFetch(est.tabla, q);
+    if (!rows.length) {
+      document.getElementById("tabla-wrap").innerHTML = '<div class="loader">Sin datos.</div>';
+      return;
+    }
+    const filas = rows.map(r =>
+      `<tr><td class="muted">${r.fecha_hora_ar||"—"}</td><td class="num">${parseFloat(r.valor).toFixed(2)}</td><td>${r.unidad||""}</td></tr>`
+    ).join("");
+    document.getElementById("tabla-wrap").innerHTML = `
+      <table>
+        <thead><tr><th>Fecha / hora</th><th>${param}</th><th>Unidad</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById("tabla-wrap").innerHTML =
+      `<div class="loader" style="color:var(--red)">Error: ${e.message}</div>`;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   GRÁFICO
+═══════════════════════════════════════════ */
+let chartInst = null;
+async function cargarGrafico() {
+  if (estActual === "comp") return;
+  const est   = ESTACIONES[estActual];
+  const param = document.getElementById("sel-param-chart").value;
+  const limit = document.getElementById("sel-limit-chart").value;
+  const pid   = est.paramHistorial[param];
+  const dark  = document.documentElement.getAttribute("data-theme") !== "light";
+
+  try {
+    const q = est.campoParam === "codigo"
+      ? `select=fecha_hora_ar,valor&codigo=eq.${pid}&order=fecha_hora_utc.asc&limit=${limit}`
+      : `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(pid)}&order=insertado_en.asc&limit=${limit}`;
+
+    const rows   = await supaFetch(est.tabla, q);
+    const labels = rows.map(r => (r.fecha_hora_ar||"").slice(0,16));
+    const data   = rows.map(r => parseFloat(r.valor));
+    const tc     = dark ? "#8b949e" : "#57606a";
+    const gc     = dark ? "rgba(48,54,61,0.5)" : "rgba(208,215,222,0.5)";
+    const ac     = dark ? "#58a6ff" : "#0969da";
+    const bg     = dark ? "rgba(88,166,255,0.07)" : "rgba(9,105,218,0.07)";
+
+    if (chartInst) chartInst.destroy();
+    chartInst = new Chart(document.getElementById("chart"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{ label:param, data, borderColor:ac, backgroundColor:bg,
+          borderWidth:1.5, pointRadius:data.length>100?0:2, pointHoverRadius:4,
+          tension:0.3, fill:true }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { labels:{color:tc, font:{family:"Space Mono",size:11}} },
+          tooltip: { backgroundColor:dark?"#161b22":"#fff", borderColor:dark?"#30363d":"#d0d7de",
+            borderWidth:1, titleColor:tc, bodyColor:ac,
+            titleFont:{family:"Space Mono",size:10}, bodyFont:{family:"Space Mono",size:12} }
+        },
+        scales: {
+          x: { ticks:{color:tc,font:{family:"Space Mono",size:9},maxTicksLimit:10,maxRotation:45}, grid:{color:gc} },
+          y: { ticks:{color:tc,font:{family:"Space Mono",size:10}}, grid:{color:gc} }
+        }
+      }
+    });
+  } catch(e) { console.error(e); }
+}
+
+/* ═══════════════════════════════════════════
+   ROSA DE VIENTOS
+═══════════════════════════════════════════ */
+let chartRosa=null, chartVelRosa=null, chartViento=null;
+
+function rosaOpts() {
+  const dark = document.documentElement.getAttribute("data-theme") !== "light";
+  const tc   = dark ? "#8b949e" : "#57606a";
+  const gc   = dark ? "rgba(48,54,61,0.7)" : "rgba(208,215,222,0.7)";
+  return {
+    responsive:true,
+    plugins:{ legend:{display:false},
+      tooltip:{ backgroundColor:dark?"#161b22":"#fff", borderColor:dark?"#30363d":"#d0d7de",
+        borderWidth:1, titleColor:tc, bodyColor:dark?"#58a6ff":"#0969da",
+        titleFont:{family:"Space Mono",size:10}, bodyFont:{family:"Space Mono",size:11} }
+    },
+    scales:{ r:{ beginAtZero:true,
+      ticks:{color:tc,font:{family:"Space Mono",size:9},backdropColor:"transparent"},
+      grid:{color:gc}, pointLabels:{color:dark?"#e6edf3":"#1f2328",font:{family:"Space Mono",size:10}},
+      angleLines:{color:gc}
+    }}
+  };
+}
+
+async function cargarRosa() {
+  if (estActual === "comp") return;
+  const est   = ESTACIONES[estActual];
+  const limit = document.getElementById("sel-limit-rosa").value;
+  const dark  = document.documentElement.getAttribute("data-theme") !== "light";
+  const ac    = dark ? "#58a6ff" : "#0969da";
+
+  try {
+    let qDir, qVel;
+    if (est.campoParam === "codigo") {
+      qDir = `select=valor,fecha_hora_utc&codigo=eq.${est.paramDirViento}&order=fecha_hora_utc.desc&limit=${limit}`;
+      qVel = `select=valor,fecha_hora_utc&codigo=eq.${est.paramVelViento}&order=fecha_hora_utc.desc&limit=${limit}`;
+    } else {
+      qDir = `select=valor,insertado_en&parametro=eq.${encodeURIComponent(est.paramDirViento)}&order=insertado_en.desc&limit=${limit}`;
+      qVel = `select=valor,insertado_en&parametro=eq.${encodeURIComponent(est.paramVelViento)}&order=insertado_en.desc&limit=${limit}`;
+    }
+    const [rowsDir, rowsVel] = await Promise.all([
+      supaFetch(est.tabla, qDir), supaFetch(est.tabla, qVel)
+    ]);
+
+    const freq=new Array(16).fill(0), velSum=new Array(16).fill(0), velCnt=new Array(16).fill(0);
+    const tsKey = est.campoParam==="codigo" ? "fecha_hora_utc" : "insertado_en";
+    const velMap={};
+    rowsVel.forEach(r => { velMap[r[tsKey]] = parseFloat(r.valor); });
+    rowsDir.forEach(r => {
+      const g=parseFloat(r.valor), idx=Math.round(g/22.5)%16;
+      freq[idx]++;
+      const v=velMap[r[tsKey]];
+      if(v!==undefined&&v>=0){velSum[idx]+=v;velCnt[idx]++;}
+    });
+    const velMedia=velCnt.map((c,i)=>c>0?+(velSum[i]/c).toFixed(1):0);
+
+    if(chartRosa) chartRosa.destroy();
+    chartRosa = new Chart(document.getElementById("chart-rosa"),{
+      type:"polarArea",
+      data:{ labels:RUMBOS, datasets:[{data:freq,
+        backgroundColor:RUMBOS.map((_,i)=>`hsla(${i*22.5},70%,55%,0.6)`),
+        borderColor:RUMBOS.map((_,i)=>`hsla(${i*22.5},70%,65%,0.9)`), borderWidth:1}]},
+      options:rosaOpts()
+    });
+
+    if(chartVelRosa) chartVelRosa.destroy();
+    chartVelRosa = new Chart(document.getElementById("chart-vel-rosa"),{
+      type:"radar",
+      data:{ labels:RUMBOS, datasets:[{label:"Vel. media (km/h)", data:velMedia,
+        borderColor:ac, backgroundColor:`${ac}22`,
+        pointBackgroundColor:ac, pointRadius:3, borderWidth:1.5}]},
+      options:rosaOpts()
+    });
+  } catch(e){ console.error(e); }
+}
+
+async function cargarVientoTemporal() {
+  if (estActual === "comp") return;
+  const est   = ESTACIONES[estActual];
+  const limit = document.getElementById("sel-limit-viento").value;
+  const dark  = document.documentElement.getAttribute("data-theme") !== "light";
+  const tc    = dark ? "#8b949e" : "#57606a";
+  const tsKey = est.campoParam==="codigo" ? "fecha_hora_utc" : "insertado_en";
+
+  try {
+    let qVel, qDir;
+    if (est.campoParam==="codigo"){
+      qVel=`select=valor,fecha_hora_ar&codigo=eq.${est.paramVelViento}&order=fecha_hora_utc.asc&limit=${limit}`;
+      qDir=`select=valor,${tsKey}&codigo=eq.${est.paramDirViento}&order=fecha_hora_utc.asc&limit=${limit}`;
+    } else {
+      qVel=`select=valor,fecha_hora_ar&parametro=eq.${encodeURIComponent(est.paramVelViento)}&order=insertado_en.asc&limit=${limit}`;
+      qDir=`select=valor,${tsKey}&parametro=eq.${encodeURIComponent(est.paramDirViento)}&order=insertado_en.asc&limit=${limit}`;
+    }
+    const [rowsVel, rowsDir] = await Promise.all([supaFetch(est.tabla,qVel), supaFetch(est.tabla,qDir)]);
+    const labels  = rowsVel.map(r=>(r.fecha_hora_ar||"").slice(0,16));
+    const velData = rowsVel.map(r=>parseFloat(r.valor));
+    const gc      = dark?"rgba(48,54,61,0.4)":"rgba(208,215,222,0.4)";
+
+    if(chartViento) chartViento.destroy();
+    chartViento = new Chart(document.getElementById("chart-viento"),{
+      type:"bar",
+      data:{ labels, datasets:[{ label:"Velocidad (km/h)", data:velData,
+        backgroundColor:velData.map(v=>v>30?"rgba(207,34,46,0.7)":v>15?"rgba(154,103,0,0.7)":"rgba(88,166,255,0.6)"),
+        borderWidth:0 }]},
+      options:{
+        responsive:true,
+        plugins:{ legend:{labels:{color:tc,font:{family:"Space Mono",size:11}}},
+          tooltip:{ backgroundColor:dark?"#161b22":"#fff", borderColor:dark?"#30363d":"#d0d7de",
+            borderWidth:1, titleColor:tc, bodyColor:dark?"#e6edf3":"#1f2328",
+            callbacks:{ afterLabel:(ctx)=>{
+              const d=rowsDir[ctx.dataIndex];
+              return d?`Dir: ${gradosARosa(parseFloat(d.valor))} (${parseFloat(d.valor).toFixed(0)}°)`:"";
+            }}}},
+        scales:{
+          x:{ticks:{color:tc,font:{family:"Space Mono",size:9},maxTicksLimit:12,maxRotation:45},grid:{color:gc}},
+          y:{ticks:{color:tc,font:{family:"Space Mono",size:10}},grid:{color:gc},beginAtZero:true}
+        }
+      }
+    });
+  } catch(e){ console.error(e); }
+}
+
+
+/* ═══════════════════════════════════════════
+   COMPARATIVA — gráfico dual
+═══════════════════════════════════════════ */
+let chartComp = null;
+async function cargarGraficoComparativo() {
+  const param  = document.getElementById("sel-param-chart").value;
+  const limit  = document.getElementById("sel-limit-chart").value;
+  const dark   = document.documentElement.getAttribute("data-theme") !== "light";
+  const tc     = dark ? "#8b949e" : "#57606a";
+  const gc     = dark ? "rgba(48,54,61,0.5)" : "rgba(208,215,222,0.5)";
+
+  // Mapas de parámetro por estación
+  const mapEet = { "Temperatura":14, "Humedad":18, "Lluvia Diaria":20, "Presion Barometrica":218, "Velocidad del Viento":4 };
+  const mapCfr = { "Temperatura":"Temperatura", "Humedad":"Humedad", "Lluvia Diaria":"Lluvia Diaria", "Presion Barometrica":"Presion Barometrica", "Velocidad del Viento":"Velocidad del Viento" };
+  const mapDc  = { "Temperatura":"Temperatura", "Humedad":"Humedad", "Lluvia Diaria":"Lluvia Acumulada", "Presion Barometrica":"Presion", "Velocidad del Viento":"Velocidad Viento" };
+
+  try {
+    const [rEet, rCfr, rDc] = await Promise.all([
+      supaFetch("mediciones_ema",  `select=fecha_hora_ar,valor&codigo=eq.${mapEet[param]}&order=fecha_hora_utc.asc&limit=${limit}`),
+      supaFetch("mediciones_cfr",  `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapCfr[param])}&order=insertado_en.asc&limit=${limit}`),
+      supaFetch("mediciones_dc",   `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapDc[param])}&order=insertado_en.asc&limit=${limit}`),
+    ]);
+
+    const labels = rEet.map(r => (r.fecha_hora_ar||"").slice(0,16));
+
+    if(chartComp) chartComp.destroy();
+    chartComp = new Chart(document.getElementById("chart"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          { label:"EET N°1", data:rEet.map(r=>parseFloat(r.valor)),
+            borderColor:"#58a6ff", backgroundColor:"rgba(88,166,255,0.06)",
+            borderWidth:1.5, pointRadius:0, tension:0.3, fill:true },
+          { label:"CFR",     data:rCfr.map(r=>parseFloat(r.valor)),
+            borderColor:"#3fb950", backgroundColor:"rgba(63,185,80,0.06)",
+            borderWidth:1.5, pointRadius:0, tension:0.3, fill:true },
+          { label:"DC",      data:rDc.map(r=>parseFloat(r.valor)),
+            borderColor:"#f85149", backgroundColor:"rgba(248,81,73,0.06)",
+            borderWidth:1.5, pointRadius:0, tension:0.3, fill:true },
+        ]
+      },
+      options: {
+        responsive:true,
+        plugins:{
+          legend:{labels:{color:tc,font:{family:"Space Mono",size:11}}},
+          tooltip:{ backgroundColor:dark?"#161b22":"#fff", borderColor:dark?"#30363d":"#d0d7de",
+            borderWidth:1, titleColor:tc,
+            titleFont:{family:"Space Mono",size:10}, bodyFont:{family:"Space Mono",size:12} }
+        },
+        scales:{
+          x:{ticks:{color:tc,font:{family:"Space Mono",size:9},maxTicksLimit:10,maxRotation:45},grid:{color:gc}},
+          y:{ticks:{color:tc,font:{family:"Space Mono",size:10}},grid:{color:gc}}
+        }
+      }
+    });
+  } catch(e){ console.error("Gráfico comparativo:", e); }
+}
+
+/* ═══════════════════════════════════════════
+   MAPA
+═══════════════════════════════════════════ */
+let mapaInst = null;
+let mapaTileLayer = null;
+async function cargarMapa() {
+  const dark = document.documentElement.getAttribute("data-theme") !== "light";
+  const tileUrl = dark
+    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+
+  if (!mapaInst) {
+    mapaInst = L.map("mapa-container").setView([-35.622, -59.789], 13);
+    mapaTileLayer = L.tileLayer(tileUrl, { attribution:"© OpenStreetMap · CartoDB" }).addTo(mapaInst);
+  } else {
+    // Actualizar tile según tema actual
+    if (mapaTileLayer) { mapaInst.removeLayer(mapaTileLayer); }
+    mapaTileLayer = L.tileLayer(tileUrl, { attribution:"© OpenStreetMap · CartoDB" }).addTo(mapaInst);
+  }
+
+  const estaciones_geo = [
+    { id:"eet", nombre:"EET N°1 — Est. 4094", lat:-35.64533, lon:-59.78482,
+      tabla:"mediciones_ema", campo:"codigo", pid:14, color:"#58a6ff" },
+    { id:"cfr", nombre:"CFR Saladillo",        lat:-35.62250, lon:-59.78361,
+      tabla:"mediciones_cfr", campo:"parametro", pid:"Temperatura", color:"#3fb950" },
+    { id:"dc",  nombre:"Defensa Civil",        lat:-35.60000, lon:-59.80000,
+      tabla:"mediciones_dc",  campo:"parametro", pid:"Temperatura", color:"#f85149" },
+  ];
+
+  const mapaCards = document.getElementById("mapa-cards");
+  mapaCards.innerHTML = '<div class="loader">Cargando...</div>';
+
+  try {
+    const resultados = await Promise.all(estaciones_geo.map(async est => {
+      const q = est.campo === "codigo"
+        ? `select=valor,fecha_hora_ar&codigo=eq.${est.pid}&order=fecha_hora_utc.desc&limit=1`
+        : `select=valor,fecha_hora_ar&parametro=eq.${encodeURIComponent(est.pid)}&order=insertado_en.desc&limit=1`;
+      const rows = await supaFetch(est.tabla, q);
+      const temp = rows[0] ? parseFloat(rows[0].valor).toFixed(1) : "—";
+      const fecha = rows[0]?.fecha_hora_ar || "—";
+      return { ...est, temp, fecha };
+    }));
+
+    // Limpiar marcadores anteriores
+    mapaInst.eachLayer(l => { if (l instanceof L.CircleMarker) mapaInst.removeLayer(l); });
+
+    resultados.forEach(est => {
+      const marker = L.circleMarker([est.lat, est.lon], {
+        radius: 14, fillColor: est.color, color: "#fff",
+        weight: 2, opacity: 1, fillOpacity: 0.85
+      }).addTo(mapaInst);
+
+      marker.bindPopup(`
+        <strong style="font-family:monospace">${est.nombre}</strong><br>
+        🌡️ ${est.temp} °C<br>
+        <small style="color:#888">${est.fecha}</small>
+      `);
+
+      L.marker([est.lat, est.lon], {
+        icon: L.divIcon({
+          html: `<div style="font-family:monospace;font-size:11px;font-weight:700;color:${est.color};
+                 background:${dark?'rgba(13,17,23,0.75)':'rgba(255,255,255,0.85)'};
+                 padding:1px 4px;border-radius:3px;
+                 white-space:nowrap;margin-top:-28px;margin-left:18px">
+                 ${est.temp}°C</div>`,
+          iconSize: [60, 20], iconAnchor: [0, 0], className:""
+        })
+      }).addTo(mapaInst);
+    });
+
+    mapaCards.innerHTML = resultados.map(est => `
+      <div class="card" style="cursor:pointer" onclick="mapaInst.setView([${est.lat},${est.lon}],15)">
+        <div class="card-lbl">${est.nombre}</div>
+        <div><span class="card-val" style="color:${est.color}">${est.temp}</span><span class="card-unit">°C</span></div>
+        <div class="card-sub">${est.fecha}</div>
+      </div>`).join("");
+
+    setTimeout(() => mapaInst.invalidateSize(), 100);
+  } catch(e) {
+    mapaCards.innerHTML = `<div class="loader" style="color:var(--red)">Error: ${e.message}</div>`;
+  }
+}
+/* ═══════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════ */
+function showTab(id, btn) {
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("tab-"+id).classList.add("active");
+  btn.classList.add("active");
+  if(id==="actuales")  cargarActuales();
+  if(id==="historial") cargarHistorial();
+  if(id==="grafico")   { estActual === "comp" ? cargarGraficoComparativo() : cargarGrafico(); }
+  if(id==="rosa")      { cargarRosa(); cargarVientoTemporal(); }
+  if(id==="mapa")      cargarMapa();
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+cargarActuales();
+setInterval(()=>{ if(document.getElementById("tab-actuales").classList.contains("active")) cargarActuales(); }, 5*60*1000);
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+"""
+cs_saladillo.py
+===============
+Obtiene datos de climasaladillo.com (Estación Meteorológica Saladillo)
+via endpoint JSON público de Meteotemplate.
+
+URL: https://climasaladillo.com/template/homepage/blocks/stationData/stationDataAjax.php?period=today
+Ubicación estimada: -35.645, -59.7758 (barrio Falucho, Saladillo)
+Equipo: Davis Instruments / Meteotemplate
+
+Parámetros disponibles:
+  avgT   Temperatura actual        [°C]
+  avgH   Humedad actual            [%]
+  avgP   Presión actual            [hPa]
+  avgW   Velocidad viento          [km/h]
+  avgG   Ráfaga                    [km/h]
+  avgD   Punto de rocío            [°C]
+  avgA   Sensación térmica         [°C]
+  totalR Lluvia del día            [mm]
+  avgS   Radiación solar           [W/m²]
+
+Uso:
+    python cs_saladillo.py              # consulta + guarda en Supabase
+    python cs_saladillo.py --csv        # también exporta CSV
+    python cs_saladillo.py --nosupa     # solo consola
+    python cs_saladillo.py --loop 3600  # repite cada 1 hora
+
+Dependencias:
+    pip install requests
+
+Proyecto: Integración EMA Saladillo — EEST N°1 "Gral. Savio"
+"""
+
+import os
+import requests
+import json
+import csv
+import re
+import argparse
+import time
+import warnings
+from datetime import datetime, timezone, timedelta
+from urllib3.exceptions import InsecureRequestWarning
+
+warnings.filterwarnings("ignore", category=InsecureRequestWarning)
+
+# ─── Configuración ─────────────────────────────────────────────────────────────
+URL_JSON  = "https://climasaladillo.com/template/homepage/blocks/stationData/stationDataAjax.php?period=today"
+ESTACION  = "ClimaSaladillo"
+TIMEOUT   = 15
+
+HEADERS = {
+    "User-Agent":  "Mozilla/5.0 (compatible; EEST-Saladillo-script/1.0)",
+    "Referer":     "https://climasaladillo.com/template/indexDesktop.php",
+    "Accept":      "application/json, text/javascript, */*",
+}
+
+# ─── Supabase ──────────────────────────────────────────────────────────────────
+SUPA_URL   = os.environ.get("SUPA_URL", "")
+SUPA_KEY   = os.environ.get("SUPA_KEY", "")
+SUPA_TABLA = "mediciones_cs"
+
+HEADERS_SUPA = {
+    "apikey":        SUPA_KEY,
+    "Authorization": f"Bearer {SUPA_KEY}",
+    "Content-Type":  "application/json",
+    "Prefer":        "resolution=ignore-duplicates",
+}
+
+TZ_AR = timezone(timedelta(hours=-3))
+
+# ─── Mapa de campos JSON → parámetros ─────────────────────────────────────────
+# Meteotemplate devuelve strings con unidad incluida: "13.3 °C"
+# Usamos avgX para el valor actual del día
+CAMPOS = {
+    "avgT": {"parametro": "Temperatura",       "unidad": "°C"},
+    "avgH": {"parametro": "Humedad",            "unidad": "%"},
+    "avgP": {"parametro": "Presion",            "unidad": "hPa"},
+    "avgW": {"parametro": "Velocidad Viento",   "unidad": "km/h"},
+    "avgG": {"parametro": "Rafaga",             "unidad": "km/h"},
+    "avgD": {"parametro": "Punto de Rocio",     "unidad": "°C"},
+    "avgA": {"parametro": "Sensacion Termica",  "unidad": "°C"},
+    "totalR": {"parametro": "Lluvia Diaria",    "unidad": "mm"},
+    "avgS": {"parametro": "Radiacion Solar",    "unidad": "W/m2"},
+    "maxT": {"parametro": "Temperatura Maxima", "unidad": "°C"},
+    "minT": {"parametro": "Temperatura Minima", "unidad": "°C"},
+}
+
+
+# ─── Helpers ───────────────────────────────────────────────────────────────────
+def extraer_numero(texto):
+    """Extrae el número de un string como '13.3 °C' o '0 W/m<sup>2</sup>'."""
+    if texto is None:
+        return None
+    # Remover tags HTML
+    texto = re.sub(r'<[^>]+>', '', str(texto))
+    m = re.search(r'-?\d+\.?\d*', texto)
+    if m:
+        return float(m.group())
+    return None
+
+def ahora_ar():
+    return datetime.now(tz=TZ_AR).strftime("%d/%m/%Y %H:%M")
+
+
+# ─── Obtener datos ─────────────────────────────────────────────────────────────
+def obtener_datos():
+    resp = requests.get(URL_JSON, headers=HEADERS, timeout=TIMEOUT)
+    resp.raise_for_status()
+    data = resp.json()
+
+    timestamp = ahora_ar()
+    resultados = []
+
+    for campo, meta in CAMPOS.items():
+        valor_str = data.get(campo)
+        valor_num = extraer_numero(valor_str)
+        if valor_num is not None:
+            resultados.append({
+                "estacion":      ESTACION,
+                "parametro":     meta["parametro"],
+                "unidad":        meta["unidad"],
+                "valor":         valor_num,
+                "fecha_hora_ar": timestamp,
+            })
+
+    return resultados, data
+
+
+# ─── Supabase ──────────────────────────────────────────────────────────────────
+def guardar_en_supabase(datos):
+    if not datos:
+        return 0
+    url  = f"{SUPA_URL}/rest/v1/{SUPA_TABLA}"
+    resp = requests.post(url, headers=HEADERS_SUPA,
+                         data=json.dumps(datos), timeout=15)
+    if resp.status_code in (200, 201):
+        return len(datos)
+    elif resp.status_code == 409:
+        return 0
+    else:
+        raise RuntimeError(f"Supabase HTTP {resp.status_code}: {resp.text[:200]}")
+
+
+# ─── Consola ───────────────────────────────────────────────────────────────────
+def mostrar_consola(datos, insertados=None):
+    ahora = ahora_ar()
+    print()
+    print("╔══════════════════════════════════════════════════════╗")
+    print("║   Clima Saladillo — Barrio Falucho                   ║")
+    print(f"║   Consulta: {ahora}                            ║")
+    print("║   Davis Instruments · climasaladillo.com             ║")
+    print("╠══════════════════════════════════════════════════════╣")
+    for d in datos:
+        val = f"{d['valor']:.1f} {d['unidad']}"
+        print(f"║  {d['parametro']:<28} {val:<14}  {d['fecha_hora_ar']}  ║")
+    print("╠══════════════════════════════════════════════════════╣")
+    if insertados is not None:
+        if insertados > 0:
+            print(f"║  Supabase: {insertados} filas insertadas ✔                      ║")
+        else:
+            print(f"║  Supabase: sin cambios (datos ya existían)               ║")
+    print("╚══════════════════════════════════════════════════════╝")
+    print()
+
+
+# ─── CSV ───────────────────────────────────────────────────────────────────────
+def exportar_csv(datos, archivo="cs_actuales.csv"):
+    with open(archivo, "w", newline="", encoding="utf-8-sig") as f:
+        campos = ["estacion","parametro","unidad","valor","fecha_hora_ar"]
+        w = csv.DictWriter(f, fieldnames=campos)
+        w.writeheader()
+        w.writerows(datos)
+    print(f"  ✔  CSV → {archivo}")
+
+
+# ─── Main ──────────────────────────────────────────────────────────────────────
+def main():
+    parser = argparse.ArgumentParser(description="Clima Saladillo → Supabase")
+    parser.add_argument("--csv",    action="store_true", help="Exportar CSV")
+    parser.add_argument("--json",   action="store_true", help="Mostrar JSON crudo")
+    parser.add_argument("--nosupa", action="store_true", help="No guardar en Supabase")
+    parser.add_argument("--loop",   type=int, default=0,
+                        help="Repetir cada N segundos (ej: --loop 3600)")
+    args = parser.parse_args()
+
+    def ciclo():
+        try:
+            datos, raw = obtener_datos()
+
+            if args.json:
+                print(json.dumps(raw, indent=2, ensure_ascii=False))
+                return
+
+            insertados = None
+            if not args.nosupa:
+                try:
+                    insertados = guardar_en_supabase(datos)
+                except Exception as e:
+                    print(f"  ⚠  Supabase: {e}")
+
+            mostrar_consola(datos, insertados)
+
+            if args.csv:
+                exportar_csv(datos)
+
+        except requests.HTTPError as e:
+            print(f"\n  ✖ Error HTTP: {e}")
+        except requests.ConnectionError:
+            print("\n  ✖ Sin conexión a climasaladillo.com")
+        except Exception as e:
+            print(f"\n  ✖ Error inesperado: {e}")
+
+    if args.loop > 0:
+        print(f"  Modo automático — cada {args.loop//60} min. Ctrl+C para detener.\n")
+        while True:
+            ciclo()
+            time.sleep(args.loop)
+    else:
+        ciclo()
+
+
+if __name__ == "__main__":
+    if not SUPA_URL or not SUPA_KEY:
+        print("  ⚠  Variables SUPA_URL / SUPA_KEY no definidas — sin Supabase")
+
+    main()
