@@ -6,60 +6,79 @@ on:
     - cron: '5 11 * * *'
   workflow_dispatch:
 
-env:
-  SUPA_URL: ${{ secrets.SUPA_URL }}
-  SUPA_KEY: ${{ secrets.SUPA_KEY }}
-
 jobs:
-  scrapers:
+  ema-eet:
     if: github.event.schedule == '5 * * * *' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
+    timeout-minutes: 5
+    env:
+      SUPA_URL: ${{ secrets.SUPA_URL }}
+      SUPA_KEY: ${{ secrets.SUPA_KEY }}
     steps:
-      - name: Checkout repositorio
-        uses: actions/checkout@v4
-
-      - name: Configurar Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Instalar dependencias Python
-        run: pip install requests beautifulsoup4 pillow numpy urllib3 pytesseract
-
-      - name: Instalar Tesseract OCR
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y tesseract-ocr tesseract-ocr-eng -qq
-
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11', cache: 'pip' }
+      - run: pip install requests --quiet
       - name: EMA-EET
         run: python scrapers/snih_saladillo_v3.py
-        continue-on-error: true
 
+  ema-cfr:
+    if: github.event.schedule == '5 * * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPA_URL: ${{ secrets.SUPA_URL }}
+      SUPA_KEY: ${{ secrets.SUPA_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11', cache: 'pip' }
+      - run: pip install requests beautifulsoup4 --quiet
       - name: EMA-CFR
         run: python scrapers/cfr_saladillo.py
-        continue-on-error: true
 
+  ema-dc:
+    if: github.event.schedule == '5 * * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      SUPA_URL: ${{ secrets.SUPA_URL }}
+      SUPA_KEY: ${{ secrets.SUPA_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11', cache: 'pip' }
+      - run: pip install requests pillow numpy pytesseract urllib3 --quiet
+      - run: sudo apt-get update -qq && sudo apt-get install -y tesseract-ocr tesseract-ocr-eng -qq
       - name: EMA-DC
         run: python scrapers/dc_saladillo.py
-        continue-on-error: true
 
+  ema-cs:
+    if: github.event.schedule == '5 * * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPA_URL: ${{ secrets.SUPA_URL }}
+      SUPA_KEY: ${{ secrets.SUPA_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11', cache: 'pip' }
+      - run: pip install requests --quiet
       - name: EMA-CS
         run: python scrapers/cs_saladillo.py
-        continue-on-error: true
 
   ping:
     if: github.event.schedule == '5 11 * * *'
     runs-on: ubuntu-latest
     timeout-minutes: 5
-
+    env:
+      SUPA_URL: ${{ secrets.SUPA_URL }}
+      SUPA_KEY: ${{ secrets.SUPA_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install requests
+        with: { python-version: '3.11' }
+      - run: pip install requests --quiet
       - name: Supabase ping
         run: python scrapers/supabase_ping.py
