@@ -27,7 +27,7 @@ jobs:
           cache: 'pip'
 
       - name: Instalar dependencias Python
-        run: pip install requests beautifulsoup4 pillow numpy urllib3
+        run: pip install requests beautifulsoup4 pillow numpy urllib3 pytesseract
 
       - name: Instalar Tesseract OCR
         run: |
@@ -63,6 +63,3 @@ jobs:
       - run: pip install requests
       - name: Supabase ping
         run: python scrapers/supabase_ping.py
-        env:
-          SUPA_URL: ${{ secrets.SUPA_URL }}
-          SUPA_KEY: ${{ secrets.SUPA_KEY }}
