@@ -2,371 +2,275 @@
 <html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>EMA Saladillo — Red Meteorológica</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap');
-@import url('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-/* ── Tokens modo oscuro ── */
-:root {
-  --bg:      #0d1117;
-  --surf:    #161b22;
-  --surf2:   #1c2330;
-  --border:  #30363d;
-  --accent:  #58a6ff;
-  --green:   #3fb950;
-  --yellow:  #d29922;
-  --red:     #f85149;
-  --text:    #e6edf3;
-  --muted:   #8b949e;
-  --shadow:  rgba(0,0,0,0.4);
-  --mono:    'Space Mono', monospace;
-  --sans:    'DM Sans', sans-serif;
+:root{
+  --bg:#0d1117;--surf:#161b22;--surf2:#1c2330;--border:#30363d;
+  --accent:#58a6ff;--green:#3fb950;--yellow:#d29922;--red:#f85149;--orange:#f0a500;
+  --text:#e6edf3;--muted:#8b949e;--shadow:rgba(0,0,0,.4);
+  --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;
+  --header-h:56px;--nav-h:40px;--bar-h:40px;
+}
+[data-theme="light"]{
+  --bg:#f6f8fa;--surf:#fff;--surf2:#f0f2f5;--border:#d0d7de;
+  --accent:#0969da;--green:#1a7f37;--yellow:#9a6700;--red:#cf222e;
+  --text:#1f2328;--muted:#57606a;--shadow:rgba(0,0,0,.1);
 }
 
-/* ── Tokens modo claro ── */
-[data-theme="light"] {
-  --bg:      #f6f8fa;
-  --surf:    #ffffff;
-  --surf2:   #f0f2f5;
-  --border:  #d0d7de;
-  --accent:  #0969da;
-  --green:   #1a7f37;
-  --yellow:  #9a6700;
-  --red:     #cf222e;
-  --text:    #1f2328;
-  --muted:   #57606a;
-  --shadow:  rgba(0,0,0,0.1);
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);
+  min-height:100vh;padding-bottom:env(safe-area-inset-bottom);
+  transition:background .25s,color .25s}
+
+/* ── HEADER ── */
+.header{
+  background:var(--surf);border-bottom:1px solid var(--border);
+  padding:10px 16px;display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:200;box-shadow:0 1px 4px var(--shadow);
+  height:var(--header-h);
+}
+.logo{font-family:var(--mono);font-size:10px;font-weight:700;color:#fff;
+  background:var(--accent);padding:4px 7px;border-radius:5px;flex-shrink:0}
+.header-mid{flex:1;min-width:0}
+.header-mid h1{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-mid p{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:1px}
+.header-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+/* ── SELECTOR ESTACIÓN ── */
+.est-sel{display:flex;background:var(--surf2);border:1px solid var(--border);border-radius:7px;overflow:hidden}
+.est-btn{background:none;border:none;color:var(--muted);font-family:var(--mono);
+  font-size:10px;padding:5px 9px;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
+.est-btn.active{background:var(--accent);color:#fff}
+.est-btn:not(.active):hover{color:var(--text);background:var(--border)}
+
+/* ── STATUS ── */
+.dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.dot.ok{background:var(--green);animation:pulse 2s ease-in-out infinite}
+.dot.error{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.status{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--muted)}
+
+/* ── THEME BTN ── */
+.theme-btn{background:var(--surf2);border:1px solid var(--border);border-radius:7px;
+  width:32px;height:28px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-size:14px;transition:background .15s;flex-shrink:0}
+.theme-btn:hover{background:var(--border)}
+
+/* ── NAV TABS ── */
+.nav{background:var(--surf);border-bottom:1px solid var(--border);
+  padding:0 16px;display:flex;overflow-x:auto;scrollbar-width:none;
+  position:sticky;top:var(--header-h);z-index:190}
+.nav::-webkit-scrollbar{display:none}
+.nav-btn{background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--muted);font-family:var(--sans);font-size:13px;
+  padding:9px 12px;cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s}
+.nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.nav-btn:hover:not(.active){color:var(--text)}
+
+/* ── CONTENIDO ── */
+.main{max-width:1100px;margin:0 auto;padding:16px}
+.section{display:none}
+.section.active{display:block}
+
+/* ── BADGE WARN ── */
+.badge-warn{display:inline-flex;align-items:center;gap:5px;
+  background:rgba(154,103,0,.1);border:1px solid rgba(154,103,0,.25);
+  color:var(--yellow);font-family:var(--mono);font-size:10px;
+  padding:3px 9px;border-radius:20px;margin-bottom:14px}
+
+/* ── CARDS ── */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:20px}
+.card{background:var(--surf);border:1px solid var(--border);border-radius:10px;
+  padding:14px;transition:border-color .2s,transform .15s,box-shadow .2s}
+.card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 12px var(--shadow)}
+.card-ico{font-size:18px;margin-bottom:8px}
+.card-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:6px}
+.card-val{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent);line-height:1}
+.card-unit{font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:2px}
+.card-sub{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:5px}
+.card.no-data .card-val{font-size:12px;color:var(--muted);font-family:var(--sans);font-weight:400}
+
+/* ── TABLA ── */
+.table-wrap{background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.table-hdr{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.table-hdr h2{font-size:13px;font-weight:500;flex:1;min-width:0}
+.sel{background:var(--surf2);border:1px solid var(--border);color:var(--text);
+  font-family:var(--mono);font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;max-width:160px}
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--muted);text-align:left;padding:8px 14px;
+  border-bottom:1px solid var(--border);background:var(--surf2)}
+td{font-family:var(--mono);font-size:12px;padding:7px 14px;
+  border-bottom:1px solid var(--border);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surf2)}
+td.num{color:var(--accent)}
+td.muted{color:var(--muted);font-size:11px}
+
+/* ── CHART ── */
+.chart-wrap{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.chart-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.chart-hdr h2{font-size:13px;font-weight:500;flex:1;min-width:0}
+canvas{width:100% !important}
+
+/* ── COMPARATIVA ── */
+.comp-card{background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.comp-header{padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surf2);
+  font-family:var(--mono);font-size:11px;font-weight:700}
+.comp-body{padding:10px 12px}
+.comp-row{display:flex;justify-content:space-between;padding:4px 0;
+  border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px}
+.comp-row:last-child{border-bottom:none}
+.comp-param{color:var(--muted)}
+.comp-val{color:var(--text);font-weight:700}
+
+/* ── LOADER ── */
+.loader{text-align:center;padding:32px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+/* ── VERSION PIE ── */
+.version-footer{margin-top:24px;padding-top:10px;border-top:1px solid var(--border);
+  font-family:var(--mono);font-size:10px;color:var(--muted);text-align:right}
+
+/* ══════════════════════════════════════
+   RESPONSIVE — MOBILE FIRST
+══════════════════════════════════════ */
+
+/* ── Mobile bottom nav (reemplaza tabs en pantalla chica) ── */
+@media (max-width:640px){
+  :root{--header-h:52px}
+
+  /* Ocultar nav horizontal */
+  .nav{display:none}
+
+  /* Header compacto */
+  .header{padding:8px 12px;gap:8px}
+  .header-mid h1{font-size:13px}
+  .header-mid p{display:none}
+  .est-btn{font-size:9px;padding:4px 7px}
+
+  /* Contenido */
+  .main{padding:10px}
+
+  /* Cards más chicas */
+  .cards-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+  .card{padding:12px}
+  .card-val{font-size:20px}
+
+  /* Tablas scrolleables */
+  .table-wrap{overflow-x:auto}
+  table{min-width:320px}
+
+  /* Charts altura reducida */
+  .chart-canvas-wrap{height:220px !important}
+
+  /* Rosa de vientos apilada */
+  .rosa-grid{grid-template-columns:1fr !important}
+
+  /* Comparativa 1 columna */
+  .comp-4col{grid-template-columns:1fr 1fr !important}
+
+  /* Mapa más chico */
+  #mapa-container{height:280px !important}
+
+  /* Análisis espacial */
+  #esp-cards{grid-template-columns:repeat(2,1fr) !important}
+
+  /* Selector de estación — ocultar labels largos */
+  .est-btn[title*="EEST"]::after{content:"EET"}
+
+  /* Barra de navegación inferior */
+  .bottom-nav{display:flex !important}
+  body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
 }
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--sans);
-  min-height: 100vh;
-  padding-bottom: 60px;
-  transition: background .25s, color .25s;
+@media (min-width:641px){
+  .bottom-nav{display:none !important}
 }
 
-/* ── Header ── */
-.header {
-  background: var(--surf);
-  border-bottom: 1px solid var(--border);
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 1px 4px var(--shadow);
+/* ── Bottom navigation bar ── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--surf);border-top:1px solid var(--border);
+  display:none;
+  padding-bottom:env(safe-area-inset-bottom);
+  z-index:300;
+  box-shadow:0 -2px 8px var(--shadow);
+}
+.bottom-nav-inner{
+  display:grid;grid-template-columns:repeat(5,1fr);
+  height:56px;
+}
+.bnav-btn{
+  background:none;border:none;color:var(--muted);
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;cursor:pointer;
+  font-family:var(--sans);font-size:10px;
+  padding:6px 4px;transition:color .15s;
+}
+.bnav-btn.active{color:var(--accent)}
+.bnav-btn:hover:not(.active){color:var(--text)}
+.bnav-icon{font-size:18px;line-height:1}
+.bnav-label{font-size:9px;line-height:1}
+
+/* ── Más (overflow menu) ── */
+.more-menu{
+  position:fixed;bottom:60px;right:0;left:0;
+  background:var(--surf);border-top:1px solid var(--border);
+  display:none;flex-direction:column;
+  z-index:290;box-shadow:0 -4px 16px var(--shadow);
+}
+.more-menu.open{display:flex}
+.more-item{
+  background:none;border:none;border-bottom:1px solid var(--border);
+  color:var(--text);font-family:var(--sans);font-size:14px;
+  padding:14px 20px;cursor:pointer;text-align:left;
+  display:flex;align-items:center;gap:12px;
+}
+.more-item:last-child{border-bottom:none}
+.more-item:hover{background:var(--surf2)}
+.more-item.active{color:var(--accent)}
+.more-overlay{
+  position:fixed;inset:0;z-index:280;display:none;
+  background:rgba(0,0,0,.4);
+}
+.more-overlay.open{display:block}
+
+/* ── Tablet ── */
+@media (min-width:641px) and (max-width:900px){
+  .comp-4col{grid-template-columns:1fr 1fr !important}
+  .cards-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 }
 
-.logo {
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--surf);
-  background: var(--accent);
-  padding: 4px 7px;
-  border-radius: 5px;
-  flex-shrink: 0;
-}
-
-.header-mid { flex: 1; min-width: 0; }
-.header-mid h1 {
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.header-mid p {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--muted);
-  margin-top: 1px;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-/* ── Selector de estación ── */
-.est-sel {
-  display: flex;
-  background: var(--surf2);
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  overflow: hidden;
-}
-.est-btn {
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-family: var(--mono);
-  font-size: 10px;
-  padding: 5px 10px;
-  cursor: pointer;
-  transition: background .15s, color .15s;
-  white-space: nowrap;
-}
-.est-btn.active {
-  background: var(--accent);
-  color: var(--surf);
-}
-.est-btn:not(.active):hover { color: var(--text); background: var(--border); }
-
-/* ── Toggle día/noche ── */
-.theme-btn {
-  background: var(--surf2);
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  width: 32px;
-  height: 28px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  transition: background .15s;
-  flex-shrink: 0;
-}
-.theme-btn:hover { background: var(--border); }
-
-/* ── Status dot ── */
-.status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--muted);
-}
-.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
-.dot.ok    { background: var(--green); animation: pulse 2s ease-in-out infinite; }
-.dot.error { background: var(--red); animation: none; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
-
-/* ── Nav ── */
-.nav {
-  background: var(--surf);
-  border-bottom: 1px solid var(--border);
-  padding: 0 20px;
-  display: flex;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.nav::-webkit-scrollbar { display: none; }
-.nav-btn {
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--muted);
-  font-family: var(--sans);
-  font-size: 13px;
-  padding: 9px 14px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color .15s, border-color .15s;
-}
-.nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-.nav-btn:hover:not(.active) { color: var(--text); }
-
-/* ── Main ── */
-.main { max-width: 1100px; margin: 0 auto; padding: 20px; }
-.section { display: none; }
-.section.active { display: block; }
-
-/* ── Badge ── */
-.badge-warn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(154,103,0,.1);
-  border: 1px solid rgba(154,103,0,.25);
-  color: var(--yellow);
-  font-family: var(--mono);
-  font-size: 10px;
-  padding: 3px 9px;
-  border-radius: 20px;
-  margin-bottom: 16px;
-}
-[data-theme="light"] .badge-warn {
-  background: rgba(154,103,0,.08);
-  border-color: rgba(154,103,0,.3);
-}
-
-/* ── Cards ── */
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 10px;
-  margin-bottom: 24px;
-}
-.card {
-  background: var(--surf);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px;
-  transition: border-color .2s, transform .15s, box-shadow .2s;
-}
-.card:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px var(--shadow);
-}
-.card-ico  { font-size: 18px; margin-bottom: 8px; }
-.card-lbl  { font-size: 10px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin-bottom: 6px; }
-.card-val  { font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--accent); line-height: 1; }
-.card-unit { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-left: 2px; }
-.card-sub  { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 5px; }
-.card.no-data .card-val { font-size: 12px; color: var(--muted); font-family: var(--sans); font-weight: 400; }
-
-/* ── Tabla ── */
-.table-wrap {
-  background: var(--surf);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-}
-.table-hdr {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.table-hdr h2 { font-size: 13px; font-weight: 500; flex: 1; }
-.sel {
-  background: var(--surf2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 11px;
-  padding: 4px 9px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-table { width: 100%; border-collapse: collapse; }
-th {
-  font-family: var(--mono);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  color: var(--muted);
-  text-align: left;
-  padding: 9px 16px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surf2);
-}
-td {
-  font-family: var(--mono);
-  font-size: 12px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--border);
-  color: var(--text);
-}
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: var(--surf2); }
-td.num { color: var(--accent); }
-td.muted { color: var(--muted); font-size: 11px; }
-
-/* ── Chart wrap ── */
-.chart-wrap {
-  background: var(--surf);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 16px;
-}
-.chart-hdr {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-.chart-hdr h2 { font-size: 13px; font-weight: 500; flex: 1; }
-canvas { width: 100% !important; }
-
-/* ── Info ── */
-.info-bar {
-  margin-top: 24px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--muted);
-  line-height: 1.9;
-}
-
-.loader {
-  text-align: center;
-  padding: 36px;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--muted);
-}
-
-/* ── Comparativa ── */
-.comp-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-.comp-card {
-  background: var(--surf);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-}
-.comp-header {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surf2);
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--accent);
-}
-.comp-body { padding: 12px 14px; }
-.comp-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 5px 0;
-  border-bottom: 1px solid var(--border);
-  font-family: var(--mono);
-  font-size: 11px;
-}
-.comp-row:last-child { border-bottom: none; }
-.comp-param { color: var(--muted); }
-.comp-val   { color: var(--text); font-weight: 700; }
-
-@media (max-width: 600px) {
-  .main { padding: 12px; }
-  .card-val { font-size: 20px; }
-  .header-mid h1 { font-size: 12px; }
-  .comp-grid { grid-template-columns: 1fr; }
-  .est-btn { font-size: 9px; padding: 4px 7px; }
+/* ── Acerca de ── */
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.about-card{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:18px}
+.about-card h3{font-size:13px;font-weight:600;margin-bottom:10px;color:var(--accent)}
+.about-card p,.about-card li{font-size:12px;color:var(--muted);line-height:1.75;margin-bottom:4px}
+.about-card ul{padding-left:16px}
+.about-est-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.about-est-row:last-child{border-bottom:none}
+.about-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.about-est-info{flex:1;min-width:0}
+.about-est-name{font-size:12px;font-weight:600}
+.about-est-sub{font-size:10px;color:var(--muted);font-family:var(--mono)}
+@media (max-width:640px){
+  .about-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <div class="header">
   <div class="logo">EMA</div>
   <div class="header-mid">
     <h1 id="h-titulo">EMA Saladillo — Red Meteorológica</h1>
-    <p id="h-sub">EEST N°1 · CFR · Saladillo, Buenos Aires</p>
+    <p id="h-sub">EMA-EET · EMA-CFR · EMA-DC · EMA-CS · Saladillo, Bs. As.</p>
   </div>
   <div class="header-right">
     <div class="est-sel">
@@ -376,14 +280,15 @@ canvas { width: 100% !important; }
       <button class="est-btn" onclick="setEstacion('cs',this)" title="EMA-CS · Clima Saladillo B° Falucho">EMA-CS</button>
       <button class="est-btn" onclick="setEstacion('comp',this)" title="Comparativa 4 estaciones">⇌</button>
     </div>
-    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar modo">🌙</button>
     <div class="status">
       <div class="dot" id="dot"></div>
       <span id="status-txt" style="display:none"></span>
     </div>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar modo">🌙</button>
   </div>
 </div>
 
+<!-- NAV DESKTOP -->
 <div class="nav">
   <button class="nav-btn active" onclick="showTab('actuales',this)">Actuales</button>
   <button class="nav-btn" onclick="showTab('historial',this)">Historial</button>
@@ -392,26 +297,17 @@ canvas { width: 100% !important; }
   <button class="nav-btn" onclick="showTab('mapa',this)">Mapa</button>
   <button class="nav-btn" onclick="showTab('espacial',this)">Análisis espacial</button>
   <button class="nav-btn" onclick="showTab('estaciones',this)">Estaciones</button>
+  <button class="nav-btn" onclick="showTab('acerca',this)">Acerca de</button>
 </div>
 
+<!-- MAIN -->
 <div class="main">
 
   <!-- ACTUALES -->
   <div class="section active" id="tab-actuales">
     <div class="badge-warn">⚠ datos sin validar — operativos en tiempo útil</div>
-    <div id="cards-wrap">
-      <div class="loader">Consultando datos...</div>
-    </div>
-    <div class="info-bar" id="info-bar">
-      <strong>Fuentes de datos:</strong><br>
-      EET N°1 (Est. 4094): SNIH / INA · snih.hidricosargentina.gob.ar · Red RMET · Licencia Creative Commons<br>
-      CFR Saladillo: Davis Instruments · ema.cfrsaladillo.edu.ar · scraping HTML<br>
-      Defensa Civil (Aeródromo): Davis Instruments · Meteobridge · defensacivil.saladillo.gob.ar · OCR imagen<br>
-      Clima Saladillo (B° Falucho): Davis Instruments · Meteotemplate · climasaladillo.com · JSON público<br>
-      Almacenamiento: Supabase · tabla mediciones_ema / cfr / dc / cs · actualización horaria<br>
-      Proyecto: Laboratorio de Industrias · 7° Año Técnico Químico · EEST N°1 "Gral. Savio" · Saladillo · 2026<br>
-      <span id="version-str" style="color:var(--accent)">v4.6 — 2026-03-23</span>
-    </div>
+    <div id="cards-wrap"><div class="loader">Consultando datos...</div></div>
+    <div class="version-footer">v5.0 — 2026-03-23</div>
   </div>
 
   <!-- HISTORIAL -->
@@ -460,7 +356,7 @@ canvas { width: 100% !important; }
           <option value="720">30 días</option>
         </select>
       </div>
-      <div style="position:relative;height:320px">
+      <div class="chart-canvas-wrap" style="position:relative;height:300px">
         <canvas id="chart" style="position:absolute;top:0;left:0;width:100%;height:100%"></canvas>
         <canvas id="chart-comp" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%"></canvas>
       </div>
@@ -469,7 +365,7 @@ canvas { width: 100% !important; }
 
   <!-- ROSA -->
   <div class="section" id="tab-rosa">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="rosa-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
       <div class="chart-wrap">
         <div class="chart-hdr">
           <h2>Frecuencia por rumbo</h2>
@@ -479,13 +375,13 @@ canvas { width: 100% !important; }
             <option value="720">30 días</option>
           </select>
         </div>
-        <canvas id="chart-rosa" height="280"></canvas>
-        <p style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:8px;text-align:center">Horas que sopló desde cada rumbo</p>
+        <canvas id="chart-rosa" height="260"></canvas>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px;text-align:center">Horas que sopló desde cada rumbo</p>
       </div>
       <div class="chart-wrap">
         <div class="chart-hdr"><h2>Velocidad media por rumbo</h2></div>
-        <canvas id="chart-vel-rosa" height="280"></canvas>
-        <p style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:8px;text-align:center">Promedio (km/h) por dirección</p>
+        <canvas id="chart-vel-rosa" height="260"></canvas>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px;text-align:center">Promedio (km/h) por dirección</p>
       </div>
     </div>
     <div class="chart-wrap" style="margin-top:14px">
@@ -496,27 +392,29 @@ canvas { width: 100% !important; }
           <option value="168">7 días</option>
         </select>
       </div>
-      <canvas id="chart-viento" height="180"></canvas>
+      <div class="chart-canvas-wrap" style="position:relative;height:200px">
+        <canvas id="chart-viento" style="position:absolute;top:0;left:0;width:100%;height:100%"></canvas>
+      </div>
     </div>
   </div>
 
   <!-- MAPA -->
   <div class="section" id="tab-mapa">
-    <div class="chart-wrap" style="padding:0;overflow:hidden;border-radius:10px">
-      <div id="mapa-container" style="height:420px;width:100%"></div>
+    <div class="chart-wrap" style="padding:0;overflow:hidden">
+      <div id="mapa-container" style="height:400px;width:100%"></div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px" id="mapa-cards"></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:12px" id="mapa-cards"></div>
   </div>
 
   <!-- ANÁLISIS ESPACIAL -->
   <div class="section" id="tab-espacial">
-    <div class="chart-wrap" style="padding:14px 16px 10px">
+    <div class="chart-wrap" style="padding:14px 14px 10px">
       <div class="chart-hdr">
         <h2>Campo interpolado — 4 estaciones</h2>
         <select class="sel" id="esp-var" onchange="renderEspacial()">
           <option value="temp">Temperatura (°C)</option>
           <option value="hum">Humedad (%)</option>
-          <option value="pres">Presión (hPa/mBar)</option>
+          <option value="pres">Presión (hPa)</option>
         </select>
         <select class="sel" id="esp-modo" onchange="renderEspacial()">
           <option value="both">Campo + isolíneas</option>
@@ -529,18 +427,18 @@ canvas { width: 100% !important; }
           <option value="240">Alta (lento)</option>
         </select>
       </div>
-      <canvas id="esp-canvas" height="440" style="border-radius:6px"></canvas>
+      <canvas id="esp-canvas" height="400" style="border-radius:6px;width:100%"></canvas>
       <div id="esp-legend" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--muted)"></div>
     </div>
-    <div id="esp-cards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px"></div>
-    <div style="margin-top:12px;padding:10px 14px;background:var(--surf);border:1px solid var(--border);border-radius:8px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
-      <strong style="color:var(--text)">Método:</strong> Interpolación IDW (Inverse Distance Weighting) · potencia p=2<br>
-      <strong style="color:var(--text)">Isolíneas:</strong> Marching Squares algorithm<br>
-      <strong style="color:var(--text)">Limitación:</strong> 4 puntos de control — campo válido dentro del polígono formado por las estaciones. Las extrapolaciones fuera del área son aproximadas.<br>
-      <strong style="color:var(--text)">Uso:</strong> Análisis exploratorio y educativo — no apto para pronóstico operativo.
+    <div id="esp-cards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px"></div>
+    <div style="margin-top:10px;padding:10px 14px;background:var(--surf);border:1px solid var(--border);border-radius:8px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">
+      <strong style="color:var(--text)">Método:</strong> IDW (Inverse Distance Weighting) p=2 ·
+      <strong style="color:var(--text)">Isolíneas:</strong> Marching Squares ·
+      <strong style="color:var(--text)">Limitación:</strong> 4 puntos — análisis exploratorio y educativo, no apto para pronóstico operativo.
     </div>
   </div>
 
+  <!-- ESTACIONES -->
   <!-- ESTACIONES -->
   <div class="section" id="tab-estaciones">
 
@@ -665,10 +563,114 @@ canvas { width: 100% !important; }
 
   </div>
 
+
+  <!-- ACERCA DE -->
+  <div class="section" id="tab-acerca">
+    <div class="about-grid">
+      <div class="about-card">
+        <h3>📡 El proyecto</h3>
+        <p>Red EMA Saladillo integra datos meteorológicos de 4 estaciones automáticas distribuidas en el partido de Saladillo, Buenos Aires. Los datos se recopilan cada hora, se almacenan en la nube y se visualizan en este portal en tiempo real.</p>
+        <p style="margin-top:8px">El proyecto surge en el marco del espacio curricular <strong style="color:var(--text)">Laboratorio de Industrias</strong> de 7° año del Técnico Químico, con el objetivo de establecer la infraestructura base para correlacionar variables meteorológicas con calidad del aire.</p>
+      </div>
+      <div class="about-card">
+        <h3>🎯 Objetivos</h3>
+        <ul>
+          <li>Acceder a datos meteorológicos en tiempo real de múltiples fuentes</li>
+          <li>Almacenar y visualizar datos desde cualquier dispositivo</li>
+          <li>Analizar gradientes espaciales y microclimáticos entre estaciones</li>
+          <li>Integrar sensores propios de calidad del aire</li>
+          <li>Generar materiales didácticos para el aula</li>
+        </ul>
+      </div>
+      <div class="about-card">
+        <h3>📍 Estaciones de la red</h3>
+        <div class="about-est-row">
+          <div class="about-dot" style="background:#58a6ff"></div>
+          <div class="about-est-info">
+            <div class="about-est-name">EMA-EET — EEST N°1 "Gral. Savio"</div>
+            <div class="about-est-sub">Tecmes RMET · API SNIH/INA · -35.64533, -59.78482</div>
+          </div>
+        </div>
+        <div class="about-est-row">
+          <div class="about-dot" style="background:#3fb950"></div>
+          <div class="about-est-info">
+            <div class="about-est-name">EMA-CFR — Centro de Formación Rural</div>
+            <div class="about-est-sub">Davis Instruments · HTML scraping · -35.62236, -59.78359</div>
+          </div>
+        </div>
+        <div class="about-est-row">
+          <div class="about-dot" style="background:#f85149"></div>
+          <div class="about-est-info">
+            <div class="about-est-name">EMA-DC — Defensa Civil · Aeródromo</div>
+            <div class="about-est-sub">Davis / Meteobridge · OCR · -35.60063, -59.81350</div>
+          </div>
+        </div>
+        <div class="about-est-row">
+          <div class="about-dot" style="background:#f0a500"></div>
+          <div class="about-est-info">
+            <div class="about-est-name">EMA-CS — Clima Saladillo · B° Falucho</div>
+            <div class="about-est-sub">Davis / Meteotemplate · JSON · -35.64500, -59.77580</div>
+          </div>
+        </div>
+      </div>
+      <div class="about-card">
+        <h3>🏗 Arquitectura técnica</h3>
+        <ul>
+          <li><strong style="color:var(--text)">Scrapers:</strong> Python 3.11 — requests, BeautifulSoup, pytesseract</li>
+          <li><strong style="color:var(--text)">Scheduler:</strong> GitHub Actions — cron horario</li>
+          <li><strong style="color:var(--text)">Base de datos:</strong> Supabase (PostgreSQL) — 4 tablas + vistas armonizadas</li>
+          <li><strong style="color:var(--text)">Dashboard:</strong> HTML/CSS/JS vanilla — single file</li>
+          <li><strong style="color:var(--text)">Hosting:</strong> GitHub Pages (gratuito)</li>
+          <li><strong style="color:var(--text)">Repositorio:</strong> <a href="https://github.com/lemeit/ema-saladillo" target="_blank">github.com/lemeit/ema-saladillo</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="about-card" style="margin-bottom:14px">
+      <h3>👤 Autoría y contexto</h3>
+      <p><strong style="color:var(--text)">Ing. Luciano Lamaita</strong> — Docente de Laboratorio de Industrias · EEST N°1 "Gral. Savio" · Saladillo, Buenos Aires</p>
+      <p style="margin-top:6px">También desarrollado en el marco de actividades de la <strong style="color:var(--text)">Dirección de Vialidad de la Provincia de Buenos Aires (DVBA) — Zona VI</strong>, Saladillo.</p>
+      <p style="margin-top:6px;color:var(--muted);font-size:11px">Los datos son operativos en tiempo útil y no han sido validados formalmente por los organismos responsables. Las diferencias entre estaciones pueden reflejar tanto variabilidad microclimática real como offsets de calibración de los sensores.</p>
+    </div>
+    <div style="text-align:center;font-family:var(--mono);font-size:10px;color:var(--muted);padding:10px 0;border-top:1px solid var(--border)">
+      v5.0 — 2026-03-23 · Desarrollado con Claude (Anthropic) · Saladillo, Buenos Aires
+    </div>
+  </div>
+
 </div><!-- /main -->
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- BOTTOM NAV MOBILE -->
+<div class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bnav-btn active" onclick="showTabMobile('actuales',this)" data-tab="actuales">
+      <span class="bnav-icon">🌡️</span><span class="bnav-label">Actuales</span>
+    </button>
+    <button class="bnav-btn" onclick="showTabMobile('grafico',this)" data-tab="grafico">
+      <span class="bnav-icon">📈</span><span class="bnav-label">Gráfico</span>
+    </button>
+    <button class="bnav-btn" onclick="showTabMobile('mapa',this)" data-tab="mapa">
+      <span class="bnav-icon">🗺️</span><span class="bnav-label">Mapa</span>
+    </button>
+    <button class="bnav-btn" onclick="showTabMobile('historial',this)" data-tab="historial">
+      <span class="bnav-icon">📋</span><span class="bnav-label">Historial</span>
+    </button>
+    <button class="bnav-btn" onclick="toggleMore()" id="more-btn">
+      <span class="bnav-icon">☰</span><span class="bnav-label">Más</span>
+    </button>
+  </div>
+</div>
+
+<!-- OVERLAY + MENÚ MÁS (mobile) -->
+<div class="more-overlay" id="more-overlay" onclick="closeMore()"></div>
+<div class="more-menu" id="more-menu">
+  <button class="more-item" onclick="showTabMobile('rosa',null);closeMore()">🌬️ &nbsp;Rosa de vientos</button>
+  <button class="more-item" onclick="showTabMobile('espacial',null);closeMore()">🗺 &nbsp;Análisis espacial</button>
+  <button class="more-item" onclick="showTabMobile('estaciones',null);closeMore()">📍 &nbsp;Estaciones</button>
+  <button class="more-item" onclick="showTabMobile('acerca',null);closeMore()">ℹ️ &nbsp;Acerca de</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
+
 /* ═══════════════════════════════════════════
    CONFIG
 ═══════════════════════════════════════════ */
@@ -1305,40 +1307,94 @@ function onGrafParamChange() {
 let chartComp = null;
 async function cargarGraficoComparativo() {
   const param  = document.getElementById("sel-param-chart").value;
-  const limit  = document.getElementById("sel-limit-chart").value;
+  const limit  = parseInt(document.getElementById("sel-limit-chart").value);
   const dark   = document.documentElement.getAttribute("data-theme") !== "light";
   const tc     = dark ? "#8b949e" : "#57606a";
   const gc     = dark ? "rgba(48,54,61,0.5)" : "rgba(208,215,222,0.5)";
 
-  // Mostrar canvas comparativo, ocultar individual
   document.getElementById("chart").style.display = "none";
   document.getElementById("chart-comp").style.display = "block";
-  document.getElementById("graf-titulo").textContent = `Comparativa — ${param}`;
+  document.getElementById("graf-titulo").textContent = `Comparativa — ${param} (promedio horario)`;
 
   const mapParam = COMP_MAP[param] || COMP_MAP["Temperatura"];
 
+  // Parámetros que tienen vista armonizada dedicada
+  const VISTAS = {
+    "Temperatura":   "v_temperatura_comparativa",
+    "Humedad":       "v_ema_armonizada",
+    "Presión":       "v_ema_armonizada",
+    "Vel. viento":   "v_ema_armonizada",
+    "Ráfaga":        "v_ema_armonizada",
+    "Lluvia":        "v_ema_armonizada",
+    "Punto de rocío":"v_ema_armonizada",
+    "Radiación solar":"v_ema_armonizada",
+  };
+
+  // Nombre canónico del parámetro en v_ema_armonizada
+  const CANON = {
+    "Temperatura":    "Temperatura",
+    "Humedad":        "Humedad",
+    "Presión":        "Presion",
+    "Vel. viento":    "Velocidad Viento",
+    "Ráfaga":         "Rafaga",
+    "Lluvia":         "Lluvia",
+    "Punto de rocío": "Punto de Rocio",
+    "Radiación solar":"Radiacion Solar",
+  };
+
   try {
-    const queries = [
-      mapParam.eet !== null ? supaFetch("mediciones_ema", `select=fecha_hora_ar,valor&codigo=eq.${mapParam.eet}&order=fecha_hora_utc.asc&limit=${limit}`) : Promise.resolve([]),
-      mapParam.cfr !== null ? supaFetch("mediciones_cfr", `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.cfr)}&order=insertado_en.asc&limit=${limit}`) : Promise.resolve([]),
-      mapParam.dc  !== null ? supaFetch("mediciones_dc",  `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.dc)}&order=insertado_en.asc&limit=${limit}`)  : Promise.resolve([]),
-      mapParam.cs  !== null ? supaFetch("mediciones_cs",  `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.cs)}&order=insertado_en.asc&limit=${limit}`)  : Promise.resolve([]),
-    ];
-    const [rEet, rCfr, rDc, rCs] = await Promise.all(queries);
+    let labels, dEet, dCfr, dDc, dCs;
 
-    // Usar la serie con más datos como eje X
-    // Preferir EET si tiene datos, sino la más poblada
-    const serieRef = rEet.length > 0 ? rEet :
-                     [rCfr, rDc, rCs].reduce((a,b) => b.length > a.length ? b : a, rCfr);
-    const labels = serieRef.map(r => (r.fecha_hora_ar||"").slice(0,13));
+    if (param === "Temperatura") {
+      // Usar vista pivotada — una fila por hora con las 4 columnas
+      const rows = await supaFetch("v_temperatura_comparativa",
+        `select=hora,eet,cfr,dc,cs&order=hora.asc&limit=${limit}`);
+      labels = rows.map(r => r.hora.slice(0,13));
+      dEet   = rows.map(r => r.eet   !== null ? parseFloat(r.eet)   : null);
+      dCfr   = rows.map(r => r.cfr   !== null ? parseFloat(r.cfr)   : null);
+      dDc    = rows.map(r => r.dc    !== null ? parseFloat(r.dc)    : null);
+      dCs    = rows.map(r => r.cs    !== null ? parseFloat(r.cs)    : null);
 
-    // Función para mapear datos a labels por timestamp (evita desalineaciones)
-    const mapearSerie = (rows) => {
-      if (!rows.length) return new Array(labels.length).fill(null);
-      const ts2val = {};
-      rows.forEach(r => { ts2val[(r.fecha_hora_ar||"").slice(0,13)] = parseFloat(r.valor); });
-      return labels.map(l => ts2val[l] ?? null);
-    };
+    } else if (CANON[param]) {
+      // Usar v_ema_armonizada y pivotar en JS
+      const canon = CANON[param];
+      const rows  = await supaFetch("v_ema_armonizada",
+        `select=hora,estacion,valor&parametro=eq.${encodeURIComponent(canon)}&order=hora.asc&limit=${limit * 4}`);
+
+      // Extraer horas únicas ordenadas
+      const horasSet = [...new Set(rows.map(r => r.hora))].sort();
+      labels = horasSet.slice(-limit);
+
+      const pivot = {};
+      rows.forEach(r => {
+        if (!pivot[r.hora]) pivot[r.hora] = {};
+        pivot[r.hora][r.estacion] = parseFloat(r.valor);
+      });
+
+      dEet = labels.map(h => pivot[h]?.["EET N°1"] ?? null);
+      dCfr = labels.map(h => pivot[h]?.["CFR"]     ?? null);
+      dDc  = labels.map(h => pivot[h]?.["DC"]      ?? null);
+      dCs  = labels.map(h => pivot[h]?.["CS"]      ?? null);
+
+    } else {
+      // Fallback: consulta individual (parámetros sin vista armonizada)
+      const queries = [
+        mapParam.eet !== null ? supaFetch("mediciones_ema", `select=fecha_hora_ar,valor&codigo=eq.${mapParam.eet}&order=fecha_hora_utc.asc&limit=${limit}`) : Promise.resolve([]),
+        mapParam.cfr !== null ? supaFetch("mediciones_cfr", `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.cfr)}&order=insertado_en.asc&limit=${limit}`) : Promise.resolve([]),
+        mapParam.dc  !== null ? supaFetch("mediciones_dc",  `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.dc)}&order=insertado_en.asc&limit=${limit}`)  : Promise.resolve([]),
+        mapParam.cs  !== null ? supaFetch("mediciones_cs",  `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.cs)}&order=insertado_en.asc&limit=${limit}`)  : Promise.resolve([]),
+      ];
+      const [rEet, rCfr, rDc, rCs] = await Promise.all(queries);
+      const serieRef = rEet.length > 0 ? rEet : [rCfr,rDc,rCs].reduce((a,b)=>b.length>a.length?b:a,rCfr);
+      labels = serieRef.map(r => (r.fecha_hora_ar||"").slice(0,13));
+      const mp = (rows) => {
+        if (!rows.length) return new Array(labels.length).fill(null);
+        const m={};
+        rows.forEach(r=>{m[(r.fecha_hora_ar||"").slice(0,13)]=parseFloat(r.valor);});
+        return labels.map(l=>m[l]??null);
+      };
+      dEet=mp(rEet); dCfr=mp(rCfr); dDc=mp(rDc); dCs=mp(rCs);
+    }
 
     if(chartComp) chartComp.destroy();
     chartComp = new Chart(document.getElementById("chart-comp"), {
@@ -1346,22 +1402,18 @@ async function cargarGraficoComparativo() {
       data: {
         labels,
         datasets: [
-          { label:EST_NOMBRES.eet, data:mapearSerie(rEet),
+          { label:EST_NOMBRES.eet, data:dEet,
             borderColor:"#58a6ff", backgroundColor:"rgba(88,166,255,0.06)",
-            borderWidth:1.5, pointRadius:0, tension:0.3, fill:true,
-            spanGaps:false },
-          { label:EST_NOMBRES.cfr, data:mapearSerie(rCfr),
+            borderWidth:1.5, pointRadius:0, tension:0.3, fill:true, spanGaps:false },
+          { label:EST_NOMBRES.cfr, data:dCfr,
             borderColor:"#3fb950", backgroundColor:"rgba(63,185,80,0.06)",
-            borderWidth:1.5, pointRadius:0, tension:0.3, fill:true,
-            spanGaps:false },
-          { label:EST_NOMBRES.dc,  data:mapearSerie(rDc),
+            borderWidth:1.5, pointRadius:0, tension:0.3, fill:true, spanGaps:false },
+          { label:EST_NOMBRES.dc,  data:dDc,
             borderColor:"#f85149", backgroundColor:"rgba(248,81,73,0.06)",
-            borderWidth:1.5, pointRadius:0, tension:0.3, fill:true,
-            spanGaps:false },
-          { label:EST_NOMBRES.cs,  data:mapearSerie(rCs),
+            borderWidth:1.5, pointRadius:0, tension:0.3, fill:true, spanGaps:false },
+          { label:EST_NOMBRES.cs,  data:dCs,
             borderColor:"#f0a500", backgroundColor:"rgba(240,165,0,0.06)",
-            borderWidth:1.5, pointRadius:0, tension:0.3, fill:true,
-            spanGaps:false },
+            borderWidth:1.5, pointRadius:0, tension:0.3, fill:true, spanGaps:false },
         ]
       },
       options: {
@@ -1750,6 +1802,51 @@ function showTab(id, btn) {
 ═══════════════════════════════════════════ */
 cargarActuales();
 setInterval(()=>{ if(document.getElementById("tab-actuales").classList.contains("active")) cargarActuales(); }, 5*60*1000);
+
+
+/* ── showTab actualizado con Acerca de ── */
+function showTab(id, btn) {
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("tab-"+id).classList.add("active");
+  if(btn) btn.classList.add("active");
+  if(id==="actuales")   cargarActuales();
+  if(id==="historial")  cargarHistorial();
+  if(id==="grafico")    { estActual==="comp" ? cargarGraficoComparativo() : cargarGrafico(); }
+  if(id==="rosa")       { cargarRosa(); cargarVientoTemporal(); }
+  if(id==="mapa")       cargarMapa();
+  if(id==="espacial")   renderEspacial();
+  if(id==="estaciones" || id==="acerca") {}
+}
+
+/* ── Mobile nav ── */
+function showTabMobile(id, btn) {
+  showTab(id, null);
+  document.querySelectorAll(".bnav-btn").forEach(b=>b.classList.remove("active"));
+  if(btn) btn.classList.add("active");
+  // Sincronizar nav desktop
+  document.querySelectorAll(".nav-btn").forEach(b=>{
+    if(b.getAttribute("onclick")?.includes("'"+id+"'")) b.classList.add("active");
+  });
+}
+
+function toggleMore() {
+  const menu=document.getElementById("more-menu");
+  const overlay=document.getElementById("more-overlay");
+  const open=menu.classList.contains("open");
+  if(open){closeMore();}
+  else{menu.classList.add("open");overlay.classList.add("open");}
+}
+function closeMore(){
+  document.getElementById("more-menu").classList.remove("open");
+  document.getElementById("more-overlay").classList.remove("open");
+}
+
+/* ── INIT ── */
+cargarActuales();
+setInterval(()=>{
+  if(document.getElementById("tab-actuales").classList.contains("active")) cargarActuales();
+}, 5*60*1000);
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </body>
