@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Calidad del Agua — Saladillo</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -13,193 +13,347 @@
   --bg:#0d1117;--surf:#161b22;--surf2:#1c2330;--border:#30363d;
   --text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;
   --green:#3fb950;--yellow:#d29922;--red:#f85149;--orange:#f0a500;
-  --mono:'Courier New',monospace;
+  --mono:'Courier New',monospace;--r:8px;
+}
+[data-theme=light]{
+  --bg:#f6f8fa;--surf:#fff;--surf2:#f0f2f5;--border:#d0d7de;
+  --text:#1f2328;--muted:#656d76;--accent:#0969da;
+  --green:#1a7f37;--yellow:#9a6700;--red:#cf222e;--orange:#bc4c00;
 }
 body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;font-size:14px;line-height:1.6;padding-bottom:40px}
+a{color:var(--accent)}
 
-/* Header */
-.header{background:var(--surf);border-bottom:2px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:12px}
-.header-icon{font-size:24px}
-.header h1{font-size:16px;font-weight:600}
-.header p{font-size:11px;color:var(--muted);margin-top:2px}
+.hdr{background:var(--surf);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.hdr h1{font-size:15px;font-weight:600}
+.hdr p{font-size:11px;color:var(--muted)}
+.btn{background:var(--surf2);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.danger{color:var(--red);border-color:var(--red)}
 
-/* Tabs */
-.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--surf);padding:0 20px;overflow-x:auto}
-.tab{padding:10px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);white-space:nowrap;transition:all .15s}
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surf);padding:0 20px;overflow-x:auto}
+.tab{padding:10px 14px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);white-space:nowrap;transition:.15s}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.tab:hover{color:var(--text)}
 
-/* Content */
-.content{padding:20px;max-width:1100px;margin:0 auto}
+.content{padding:16px 20px;max-width:1200px;margin:0 auto}
 .panel{display:none}.panel.active{display:block}
 
-/* Alert banner arsénico */
-.alert-banner{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.4);border-left:4px solid var(--red);border-radius:8px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:flex-start;gap:10px}
-.alert-banner .ico{font-size:20px;flex-shrink:0}
-.alert-banner h3{font-size:13px;font-weight:600;color:var(--red);margin-bottom:4px}
-.alert-banner p{font-size:12px;color:var(--muted);line-height:1.6}
+.filtros{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:14px}
+.ftit{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.fi label{font-size:11px;color:var(--muted);display:block;margin-bottom:3px}
+.sel,.inp{width:100%;background:var(--surf2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;font-family:inherit}
+.sel:focus,.inp:focus{outline:none;border-color:var(--accent)}
 
-/* Stat cards */
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px}
-.stat-card{background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px 14px;border-top:3px solid}
-.stat-card.ok{border-top-color:var(--green)}
-.stat-card.warn{border-top-color:var(--yellow)}
-.stat-card.bad{border-top-color:var(--red)}
-.stat-label{font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:4px}
-.stat-val{font-size:20px;font-weight:700}
-.stat-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:14px}
+.sc{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;border-left:4px solid}
+.sc.ok{border-left-color:var(--green)}.sc.warn{border-left-color:var(--yellow)}
+.sc.bad{border-left-color:var(--red)}.sc.info{border-left-color:var(--accent)}
+.sc-lbl{font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:3px}
+.sc-val{font-size:22px;font-weight:700}
+.sc-sub{font-size:10px;color:var(--muted);margin-top:2px}
 
-/* Selector */
-.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
-.sel{background:var(--surf2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;font-family:var(--mono)}
+.cbox{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.cbox h3{font-size:13px;font-weight:600;margin-bottom:10px}
 
-/* Chart */
-.chart-box{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px}
-.chart-box h3{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.chart-box canvas{max-height:300px}
-
-/* Tabla */
-.table-wrap{background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px}
-.table-wrap h3{font-size:13px;font-weight:600;padding:12px 16px;border-bottom:1px solid var(--border)}
-table{width:100%;border-collapse:collapse;font-size:12px}
-th{background:var(--surf2);padding:8px 12px;text-align:left;font-size:10px;color:var(--muted);font-weight:600;font-family:var(--mono)}
-td{padding:7px 12px;border-bottom:1px solid var(--border)}
-tr:last-child td{border-bottom:none}
-.val-ok{color:var(--green);font-weight:600}
-.val-warn{color:var(--yellow);font-weight:600}
-.val-bad{color:var(--red);font-weight:600}
-.badge{font-size:10px;padding:2px 7px;border-radius:10px;font-family:var(--mono)}
-.badge-bad{background:rgba(248,81,73,.15);color:var(--red)}
-.badge-ok{background:rgba(63,185,80,.15);color:var(--green)}
-.badge-warn{background:rgba(210,153,34,.15);color:var(--yellow)}
-
-/* Mapa */
-#mapa-agua{height:420px;border-radius:8px;border:1px solid var(--border)}
+#mapa-agua,#mapa-admin{height:380px;border-radius:var(--r);border:1px solid var(--border)}
 .leaflet-popup-content-wrapper{background:var(--surf);color:var(--text);border:1px solid var(--border)}
 .leaflet-popup-tip{background:var(--surf)}
 
-/* Normativa */
-.norm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
-.norm-card{background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:14px}
-.norm-card h4{font-size:12px;font-weight:600;margin-bottom:8px;color:var(--accent)}
-.norm-row{display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid var(--border)}
-.norm-row:last-child{border-bottom:none}
-.norm-param{color:var(--muted)}
-.norm-val{font-family:var(--mono);color:var(--text)}
+.tw{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.tw-hdr{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border)}
+.tw-hdr h3{font-size:13px;font-weight:600}
+.tscroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:var(--surf2);padding:7px 10px;text-align:left;font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap;cursor:pointer}
+th:hover{color:var(--text)}
+td{padding:6px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surf2)}
+.vok{color:var(--green);font-weight:600}.vwarn{color:var(--yellow);font-weight:600}.vbad{color:var(--red);font-weight:600}
+.bdg{font-size:10px;padding:1px 6px;border-radius:8px;font-family:var(--mono)}
+.bdg-bad{background:rgba(207,34,46,.15);color:var(--red)}
+.bdg-ok{background:rgba(26,127,55,.15);color:var(--green)}
+.bdg-warn{background:rgba(154,103,0,.15);color:var(--yellow)}
 
-@media(max-width:600px){
-  .stat-grid{grid-template-columns:1fr 1fr}
-  #mapa-agua{height:260px}
-  .controls{flex-direction:column;align-items:flex-start}
+/* Punto de muestreo — ficha */
+.ficha{display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:14px}
+.ficha-info{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.ficha-info h3{font-size:14px;font-weight:600;margin-bottom:8px;color:var(--accent)}
+.ficha-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)}
+.ficha-row:last-child{border-bottom:none}
+.ficha-row span:first-child{color:var(--muted)}
+
+.alert{padding:10px 14px;border-radius:var(--r);margin-bottom:12px;border-left:4px solid;font-size:12px}
+.alert-red{background:rgba(207,34,46,.08);border-color:var(--red)}
+.alert-yellow{background:rgba(154,103,0,.08);border-color:var(--yellow)}
+.alert-blue{background:rgba(9,105,218,.08);border-color:var(--accent)}
+.alert strong{display:block;margin-bottom:3px}
+
+/* Admin */
+.admin-grid{display:grid;grid-template-columns:1fr 360px;gap:14px}
+.admin-panel{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:12px;max-height:380px;overflow-y:auto}
+.fi-item{background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;margin-bottom:6px;font-size:12px;transition:.15s}
+.fi-item:hover,.fi-item.sel{border-color:var(--accent);background:rgba(88,166,255,.08)}
+.fi-name{font-weight:600;margin-bottom:2px}
+.fi-det{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.fi-tipo{font-size:10px;padding:1px 5px;border-radius:8px;background:var(--surf);border:1px solid var(--border);color:var(--muted);margin-left:4px}
+.edit-box{background:var(--surf);border:2px solid var(--accent);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.edit-box h4{font-size:13px;font-weight:600;color:var(--accent);margin-bottom:10px}
+.form2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.form2 label,.form1 label{font-size:11px;color:var(--muted);display:block;margin-bottom:3px}
+.hint{font-size:10px;color:var(--muted);font-style:italic;margin-top:6px}
+.no-coords{color:var(--yellow);font-size:10px}
+
+/* Normativa */
+.nt{width:100%;border-collapse:collapse;font-size:12px}
+.nt th{background:var(--surf2);padding:8px 12px;text-align:left;font-size:11px;color:var(--muted);font-weight:600}
+.nt td{padding:7px 12px;border-bottom:1px solid var(--border)}
+.nt tr:last-child td{border-bottom:none}
+.diff{color:var(--yellow);font-weight:600}
+
+@media(max-width:700px){
+  .admin-grid{grid-template-columns:1fr}
+  .admin-panel{max-height:260px}
+  .ficha{grid-template-columns:1fr}
+  .form2{grid-template-columns:1fr}
+  #mapa-agua,#mapa-admin{height:260px}
+  .fgrid{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
 <body>
-
-<div class="header">
-  <div class="header-icon">💧</div>
+<div class="hdr">
   <div>
-    <h1>Monitoreo de Calidad del Agua — Saladillo</h1>
-    <p>Datos oficiales · Municipalidad de Saladillo · Mayo 2025 – Abril 2026 · CAA Cap. XII · Ley PBA 11.820</p>
+    <h1>💧 Calidad del Agua — Saladillo</h1>
+    <p>Monitoreo oficial · Municipalidad · Mayo 2025 – Abr 2026 · CAA Cap. XII · Ley PBA 11.820</p>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn" onclick="toggleTheme()" id="btn-theme">☀️ Claro</button>
   </div>
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="showPanel('resumen',this)">Resumen</div>
-  <div class="tab" onclick="showPanel('parametros',this)">Parámetros</div>
-  <div class="tab" onclick="showPanel('mapa',this)">Mapa de puntos</div>
-  <div class="tab" onclick="showPanel('tabla',this)">Tabla completa</div>
-  <div class="tab" onclick="showPanel('normativa',this)">Normativa</div>
+  <div class="tab active" onclick="showP('resumen',this)">Resumen</div>
+  <div class="tab" onclick="showP('punto',this)">Por punto</div>
+  <div class="tab" onclick="showP('parametros',this)">Parámetros</div>
+  <div class="tab" onclick="showP('mapa',this)">Mapa</div>
+  <div class="tab" onclick="showP('tabla',this)">Tabla</div>
+  <div class="tab" onclick="showP('normativa',this)">Normativa</div>
+  <div class="tab" onclick="showP('admin',this)">⚙ Ubicaciones</div>
 </div>
 
 <div class="content">
 
-<!-- RESUMEN -->
-<div class="panel active" id="panel-resumen">
-
-  <div class="alert-banner">
-    <div class="ico">⚠️</div>
-    <div>
-      <h3>Arsénico por encima del límite en el 100% de las muestras</h3>
-      <p>Las 30 muestras con análisis de arsénico superan el límite máximo del CAA (0.010 mg/L). Los valores registrados van de 0.030 a 0.049 mg/L — entre 3 y 5 veces el límite. Esto es consistente con la presencia natural de arsénico en el acuífero pampeano. El arsénico natural en el subsuelo bonaerense es un problema regional documentado.</p>
+<!-- FILTROS GLOBALES -->
+<div class="filtros" id="fglobal">
+  <div class="ftit">🔍 Filtros globales</div>
+  <div class="fgrid">
+    <div class="fi"><label>Tipo de punto</label>
+      <select class="sel" id="g-tipo" onchange="filtrar()">
+        <option value="">Todos</option>
+        <option value="bomba">Bombas municipales</option>
+        <option value="jardin">Jardines / Escuelas</option>
+        <option value="caps">CAPS</option>
+        <option value="dom">Domicilios</option>
+        <option value="cazon">Cazón</option>
+        <option value="municipal">Municipal</option>
+        <option value="otro">Otros</option>
+      </select>
+    </div>
+    <div class="fi"><label>Desde</label>
+      <input type="date" class="inp" id="g-desde" value="2025-05-01" onchange="filtrar()">
+    </div>
+    <div class="fi"><label>Hasta</label>
+      <input type="date" class="inp" id="g-hasta" value="2026-12-31" onchange="filtrar()">
+    </div>
+    <div class="fi"><label>Estado</label>
+      <select class="sel" id="g-estado" onchange="filtrar()">
+        <option value="">Todos</option>
+        <option value="sobre">Con parámetros sobre límite</option>
+        <option value="ok">Dentro de límites</option>
+      </select>
     </div>
   </div>
-
-  <div class="stat-grid" id="stat-grid">
-    <!-- Generado por JS -->
+  <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+    <button class="btn" onclick="clearF()">✕ Limpiar</button>
+    <span id="f-info" style="font-size:11px;color:var(--muted);font-family:var(--mono)"></span>
   </div>
+</div>
 
-  <div class="chart-box">
-    <h3>📊 Arsénico por punto de muestreo — últimas determinaciones</h3>
-    <canvas id="chart-as"></canvas>
+<!-- RESUMEN -->
+<div class="panel active" id="panel-resumen">
+  <div class="alert alert-red">
+    <strong>⚠ Arsénico sobre límite en el 100% de las muestras con análisis de metales</strong>
+    30 de 30 muestras con determinación de arsénico superan el límite de 0.010 mg/L (CAA y Ley PBA 11.820).
+    Rango: 0.030–0.049 mg/L (3× a 5× el límite). Origen geológico natural — acuífero pampeano.
   </div>
-
-  <div class="chart-box">
-    <h3>📊 Nitratos por punto de muestreo</h3>
-    <canvas id="chart-no3"></canvas>
+  <div class="stat-grid" id="stat-grid"></div>
+  <div class="cbox">
+    <h3>Arsénico por punto — última determinación</h3>
+    <canvas id="c-as"></canvas>
   </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="cbox"><h3>Nitratos por punto</h3><canvas id="c-no3"></canvas></div>
+    <div class="cbox"><h3>Fluoruro por punto</h3><canvas id="c-f"></canvas></div>
+  </div>
+</div>
 
+<!-- POR PUNTO DE MUESTREO -->
+<div class="panel" id="panel-punto">
+  <div class="filtros" style="margin-bottom:14px">
+    <div class="ftit">Seleccionar punto de muestreo</div>
+    <div class="fgrid">
+      <div class="fi" style="grid-column:1/-1">
+        <label>Punto / Fuente</label>
+        <select class="sel" id="p-fuente" onchange="renderPunto()">
+          <option value="">-- Seleccionar --</option>
+<option value="ALEM 2987">ALEM 2987</option>
+<option value="ALEM Nº2865">ALEM Nº2865</option>
+<option value="ALMAFUERTE 3811">ALMAFUERTE 3811</option>
+<option value="BOMBA">BOMBA</option>
+<option value="BOMBA 1">BOMBA 1</option>
+<option value="BOMBA 11">BOMBA 11</option>
+<option value="BOMBA 12">BOMBA 12</option>
+<option value="BOMBA 14">BOMBA 14</option>
+<option value="BOMBA 15">BOMBA 15</option>
+<option value="BOMBA 16">BOMBA 16</option>
+<option value="BOMBA 17">BOMBA 17</option>
+<option value="BOMBA 18">BOMBA 18</option>
+<option value="BOMBA 19">BOMBA 19</option>
+<option value="BOMBA 20">BOMBA 20</option>
+<option value="BOMBA 23">BOMBA 23</option>
+<option value="BOMBA 24">BOMBA 24</option>
+<option value="BOMBA 3">BOMBA 3</option>
+<option value="BOMBA 4">BOMBA 4</option>
+<option value="BOMBA 5">BOMBA 5</option>
+<option value="BOMBA 9">BOMBA 9</option>
+<option value="BOMBA Nº4">BOMBA Nº4</option>
+<option value="CABRAL Nº 3836">CABRAL Nº 3836</option>
+<option value="CAPS DELIA">CAPS DELIA</option>
+<option value="CAPS TEVES">CAPS TEVES</option>
+<option value="CAPS. SAN ROQUE">CAPS. SAN ROQUE</option>
+<option value="CAZON- BOMBA 1">CAZON- BOMBA 1</option>
+<option value="CAZON- BOMBA 2">CAZON- BOMBA 2</option>
+<option value="CAZON- JARDIN">CAZON- JARDIN</option>
+<option value="CRF FEMENINO">CRF FEMENINO</option>
+<option value="DOM. M.ACOSTA Nº1923">DOM. M.ACOSTA Nº1923</option>
+<option value="DOM. SUQUIA Nº3695">DOM. SUQUIA Nº3695</option>
+<option value="ESCUELA Nº38">ESCUELA Nº38</option>
+<option value="IBANVIA 3742">IBANVIA 3742</option>
+<option value="IBARBIA 3732">IBARBIA 3732</option>
+<option value="JARDIN ESPERANZA">JARDIN ESPERANZA</option>
+<option value="JARDIN JULITO">JARDIN JULITO</option>
+<option value="JARDIN Nº4">JARDIN Nº4</option>
+<option value="JARDIN SANTANA">JARDIN SANTANA</option>
+<option value="LAUREANO- JARDIN">LAUREANO- JARDIN</option>
+<option value="LEDESMA 2882">LEDESMA 2882</option>
+<option value="LEDESMA 2982">LEDESMA 2982</option>
+<option value="LEDESMA Nº3216">LEDESMA Nº3216</option>
+<option value="MUNICIPALIDAD">MUNICIPALIDAD</option>
+<option value="NIDO">NIDO</option>
+<option value="OBRAS PUBLICAS">OBRAS PUBLICAS</option>
+<option value="POSADAS Nº2530">POSADAS Nº2530</option>
+<option value="SANGUINETI 2821">SANGUINETI 2821</option>
+<option value="SANGUINETTI 3821">SANGUINETTI 3821</option>
+<option value="SANTA ANA- JARDIN">SANTA ANA- JARDIN</option>
+<option value="TOLEDO- BAJ. TANQUE">TOLEDO- BAJ. TANQUE</option>
+<option value="TOLEDO- JARDIN">TOLEDO- JARDIN</option>
+<option value="VIACO 3546">VIACO 3546</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div id="punto-contenido">
+    <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+      Seleccioná un punto de muestreo para ver su historial completo
+    </div>
+  </div>
 </div>
 
 <!-- PARÁMETROS -->
 <div class="panel" id="panel-parametros">
-  <div class="controls">
-    <label style="font-size:12px;color:var(--muted)">Parámetro:</label>
-    <select class="sel" id="sel-param" onchange="renderParamChart()">
-      <option value="Arsénico">Arsénico (mg/L)</option>
-      <option value="Nitratos">Nitratos (mg/L)</option>
-      <option value="Fluoruro Total">Fluoruro (mg/L)</option>
-      <option value="Nitritos">Nitritos (mg/L)</option>
-      <option value="Plomo">Plomo (mg/L)</option>
-      <option value="Cromo Total">Cromo Total (mg/L)</option>
-      <option value="Manganeso Total">Manganeso (mg/L)</option>
-    </select>
-    <label style="font-size:12px;color:var(--muted)">Ver:</label>
-    <select class="sel" id="sel-vista" onchange="renderParamChart()">
-      <option value="puntos">Por punto de muestreo</option>
-      <option value="fecha">Evolución temporal</option>
-    </select>
+  <div class="filtros" style="margin-bottom:14px">
+    <div class="fgrid">
+      <div class="fi"><label>Parámetro</label>
+        <select class="sel" id="pp-param" onchange="renderParam()">
+          <option value="Arsénico">Arsénico</option>
+          <option value="Nitratos">Nitratos</option>
+          <option value="Fluoruro Total">Fluoruro</option>
+          <option value="Nitritos">Nitritos</option>
+          <option value="Plomo">Plomo</option>
+          <option value="Cromo Total">Cromo Total</option>
+          <option value="Manganeso Total">Manganeso</option>
+          <option value="Coliformes Totales">Coliformes Totales</option>
+          <option value="Escherichia Coli">E. Coli</option>
+        </select>
+      </div>
+      <div class="fi"><label>Visualización</label>
+        <select class="sel" id="pp-vista" onchange="renderParam()">
+          <option value="puntos">Por punto (último valor)</option>
+          <option value="temporal">Evolución temporal</option>
+          <option value="histo">Distribución</option>
+        </select>
+      </div>
+      <div class="fi"><label>Normativa</label>
+        <select class="sel" id="pp-norma" onchange="renderParam()">
+          <option value="ambas">CAA + Ley PBA 11.820</option>
+          <option value="caa">Solo CAA</option>
+          <option value="pba">Solo Ley PBA</option>
+        </select>
+      </div>
+    </div>
   </div>
-  <div class="chart-box">
-    <h3 id="param-titulo">Arsénico por punto de muestreo</h3>
-    <canvas id="chart-param" style="max-height:380px"></canvas>
+  <div class="cbox">
+    <h3 id="pp-titulo">—</h3>
+    <div style="position:relative;height:360px"><canvas id="c-param"></canvas></div>
   </div>
-  <div id="param-resumen" style="font-size:12px;color:var(--muted);margin-top:8px;font-family:var(--mono)"></div>
+  <div id="pp-stats" class="filtros" style="font-size:12px"></div>
 </div>
 
 <!-- MAPA -->
 <div class="panel" id="panel-mapa">
-  <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
-    Color del marcador: 🔴 Arsénico sobre límite · 🟡 Algún parámetro elevado · 🟢 Dentro de límites (o sin datos de metales)
-  </p>
+  <div class="alert alert-yellow" style="margin-bottom:10px">
+    <strong>⚠ Coordenadas aproximadas</strong>
+    Las bombas tienen ubicaciones estimadas — no reales. Usá ⚙ Ubicaciones para corregirlas.
+    Puntos sin coordenadas no aparecen en el mapa.
+  </div>
+  <div class="filtros" style="margin-bottom:10px">
+    <div class="fgrid">
+      <div class="fi"><label>Color del marcador según</label>
+        <select class="sel" id="m-param" onchange="renderMapa()">
+          <option value="Arsénico">Arsénico</option>
+          <option value="Nitratos">Nitratos</option>
+          <option value="Fluoruro Total">Fluoruro</option>
+          <option value="Nitritos">Nitritos</option>
+        </select>
+      </div>
+    </div>
+  </div>
   <div id="mapa-agua"></div>
-  <p style="font-size:10px;color:var(--muted);margin-top:8px">* Coordenadas aproximadas para bombas municipales. CAPS, jardines y domicilios particulares no georeferenciados.</p>
 </div>
 
 <!-- TABLA -->
 <div class="panel" id="panel-tabla">
-  <div class="controls">
-    <label style="font-size:12px;color:var(--muted)">Filtrar fuente:</label>
-    <select class="sel" id="sel-fuente" onchange="renderTabla()">
-      <option value="">Todas</option>
-    </select>
-  </div>
-  <div class="table-wrap">
-    <h3>Datos analíticos completos</h3>
-    <div style="overflow-x:auto">
-      <table id="tabla-datos">
-        <thead>
-          <tr>
-            <th>Fuente</th><th>Fecha</th>
-            <th>Arsénico<br><span style="color:#555">lím 0.01</span></th>
-            <th>Nitratos<br><span style="color:#555">lím 45</span></th>
-            <th>Fluoruro<br><span style="color:#555">lím 1.7</span></th>
-            <th>Nitritos<br><span style="color:#555">lím 0.1</span></th>
-            <th>Colif.<br>Totales</th>
-            <th>E.Coli</th>
-          </tr>
-        </thead>
-        <tbody id="tbody-datos"></tbody>
+  <div class="tw">
+    <div class="tw-hdr">
+      <h3 id="t-titulo">Datos completos</h3>
+      <button class="btn" onclick="exportCSV()">⬇ CSV</button>
+    </div>
+    <div class="tscroll">
+      <table>
+        <thead><tr>
+          <th onclick="srt('fuente')">Fuente ↕</th>
+          <th onclick="srt('fecha_iso')">Fecha ↕</th>
+          <th onclick="srt('Arsénico')">As<br><small style="color:#555">lím 0.01</small></th>
+          <th onclick="srt('Nitratos')">NO₃⁻<br><small style="color:#555">lím 45</small></th>
+          <th onclick="srt('Fluoruro Total')">F⁻<br><small style="color:#555">CAA1.7/PBA1.3</small></th>
+          <th onclick="srt('Nitritos')">NO₂⁻<br><small style="color:#555">lím 0.1</small></th>
+          <th onclick="srt('Plomo')">Pb<br><small style="color:#555">CAA0.05/PBA0.01</small></th>
+          <th onclick="srt('Coliformes Totales')">Colif.</th>
+          <th onclick="srt('Escherichia Coli')">E.Coli</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
       </table>
     </div>
   </div>
@@ -207,365 +361,540 @@ tr:last-child td{border-bottom:none}
 
 <!-- NORMATIVA -->
 <div class="panel" id="panel-normativa">
-  <p style="font-size:12px;color:var(--muted);margin-bottom:16px">
-    Los valores máximos aplicables son los del <strong>Código Alimentario Argentino (CAA) Capítulo XII</strong> y la 
-    <strong>Ley Provincial de Buenos Aires 11.820</strong>. Los protocolos de Saladillo pueden incluir referencias a ambas normativas.
-  </p>
-  <div class="norm-grid">
-    <div class="norm-card">
-      <h4>🧪 Parámetros inorgánicos — CAA Cap. XII</h4>
-      <div class="norm-row"><span class="norm-param">Arsénico</span><span class="norm-val">≤ 0.010 mg/L</span></div>
-      <div class="norm-row"><span class="norm-param">Cadmio</span><span class="norm-val">≤ 0.003 mg/L</span></div>
-      <div class="norm-row"><span class="norm-param">Cobre</span><span class="norm-val">≤ 1.0 mg/L</span></div>
-      <div class="norm-row"><span class="norm-param">Cromo Total</span><span class="norm-val">≤ 0.05 mg/L</span></div>
-      <div class="norm-row"><span class="norm-param">Fluoruro</span><span class="norm-val">≤ 1.7 mg/L</span></div>
-      <div class="norm-row"><span class="norm-param">Manganeso</span><span class="norm-val">≤ 0.1 mg/L</span></div>
-      <div class="norm-row"><span class="norm-param">Mercurio</span><span class="norm-val">≤ 0.001 mg/L</span></div>
-      <div class="norm-row"><span class="norm-param">Nitratos (NO₃)</span><span class="norm-val">≤ 45.0 mg/L</span></div>
-      <div class="norm-row"><span class="norm-param">Nitritos (NO₂)</span><span class="norm-val">≤ 0.1 mg/L</span></div>
-      <div class="norm-row"><span class="norm-param">Plomo</span><span class="norm-val">≤ 0.010 mg/L</span></div>
-      <div class="norm-row"><span class="norm-param">Selenio</span><span class="norm-val">≤ 0.010 mg/L</span></div>
-      <div class="norm-row"><span class="norm-param">Plata</span><span class="norm-val">≤ 0.010 mg/L</span></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+    <div class="alert alert-yellow">
+      <strong>Prórroga arsénico</strong>
+      Resolución Conjunta SPReI 34/2012 y SAGyP 50/2012 prorroga el plazo para adecuarse al límite de 0.010 mg/L en zonas de hidroarsenicismo natural. Saladillo está comprendida.
     </div>
-    <div class="norm-card">
-      <h4>🦠 Parámetros bacteriológicos — CAA Cap. XII</h4>
-      <div class="norm-row"><span class="norm-param">Bact. aerobias heterótrofas</span><span class="norm-val">≤ 100 UFC/mL</span></div>
-      <div class="norm-row"><span class="norm-param">Coliformes totales</span><span class="norm-val">Ausencia/100mL</span></div>
-      <div class="norm-row"><span class="norm-param">Escherichia coli</span><span class="norm-val">Ausencia/100mL</span></div>
-      <div class="norm-row"><span class="norm-param">Pseudomona aeruginosa</span><span class="norm-val">Ausencia/100mL</span></div>
-      <div class="norm-row" style="margin-top:12px"><span class="norm-param" style="color:var(--accent)">Cloro libre residual</span><span class="norm-val" style="color:var(--accent)">≥ 0.1 mg/L</span></div>
+    <div class="alert alert-blue">
+      <strong>Diferencias entre normativas</strong>
+      Fluoruro: PBA (1.3 mg/L) más estricto que CAA (1.7 mg/L) para zona templada.
+      Plomo: PBA (0.010 mg/L) es 5× más estricto que CAA (0.050 mg/L).
     </div>
-    <div class="norm-card">
-      <h4>📋 Contexto local — Arsénico en PBA</h4>
-      <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-top:4px">
-        El arsénico en el acuífero pampeano es de origen natural (geológico), no industrial. La CONAGUA y OPDS reconocen que numerosos municipios bonaerenses no pueden cumplir el límite de 0.010 mg/L sin tratamiento específico. Los valores detectados en Saladillo (0.030–0.049 mg/L) son típicos de la región.<br><br>
-        La normativa prevé un plazo transitorio para alcanzar el valor límite mediante instalación de plantas de abatimiento de arsénico (osmosis inversa, coagulación-floculación, adsorción en alúmina activada).
-      </div>
+  </div>
+  <div class="tw">
+    <div class="tw-hdr"><h3>Valores máximos admisibles — CAA Cap. XII vs Ley PBA 11.820</h3></div>
+    <div class="tscroll">
+      <table class="nt">
+        <thead><tr>
+          <th>Parámetro</th>
+          <th style="color:var(--accent)">CAA Cap. XII</th>
+          <th style="color:var(--green)">Ley PBA 11.820</th>
+          <th>Más estricto</th>
+          <th>Nota</th>
+        </tr></thead>
+        <tbody>
+          <tr style="background:rgba(207,34,46,.05)">
+            <td><strong>Arsénico (As)</strong></td>
+            <td style="font-family:monospace">≤ 0.010 mg/L</td>
+            <td style="font-family:monospace">≤ 0.010 mg/L</td>
+            <td>—</td>
+            <td>Prórroga activa. 100% Saladillo sobre límite.</td>
+          </tr>
+          <tr><td>Nitratos (NO₃⁻)</td><td style="font-family:monospace">≤ 45.0 mg/L</td><td style="font-family:monospace">≤ 45.0 mg/L</td><td>—</td><td>Igual</td></tr>
+          <tr><td>Nitritos (NO₂⁻)</td><td style="font-family:monospace">≤ 0.10 mg/L</td><td style="font-family:monospace">≤ 0.10 mg/L</td><td>—</td><td>Igual</td></tr>
+          <tr class="diff"><td>Fluoruro (F⁻)</td><td style="font-family:monospace">≤ 1.70 mg/L</td><td style="font-family:monospace;color:var(--yellow)">≤ 1.30 mg/L</td><td style="color:var(--green)">PBA</td><td>PBA más estricto (zona templada)</td></tr>
+          <tr><td>Manganeso (Mn)</td><td style="font-family:monospace">≤ 0.10 mg/L</td><td style="font-family:monospace">≤ 0.10 mg/L</td><td>—</td><td>Igual</td></tr>
+          <tr class="diff"><td>Plomo (Pb)</td><td style="font-family:monospace">≤ 0.050 mg/L</td><td style="font-family:monospace;color:var(--yellow)">≤ 0.010 mg/L</td><td style="color:var(--green)">PBA</td><td>PBA 5× más estricto</td></tr>
+          <tr><td>Cromo Total (Cr)</td><td style="font-family:monospace">≤ 0.050 mg/L</td><td style="font-family:monospace">≤ 0.050 mg/L</td><td>—</td><td>Igual</td></tr>
+          <tr><td>Hierro Total (Fe)</td><td style="font-family:monospace">≤ 0.30 mg/L</td><td style="font-family:monospace">≤ 0.30 mg/L</td><td>—</td><td>Igual</td></tr>
+          <tr><td>Cadmio (Cd)</td><td style="font-family:monospace">≤ 0.005 mg/L</td><td style="font-family:monospace">≤ 0.005 mg/L</td><td>—</td><td>Igual</td></tr>
+          <tr><td>Mercurio (Hg)</td><td style="font-family:monospace">≤ 0.001 mg/L</td><td style="font-family:monospace">≤ 0.001 mg/L</td><td>—</td><td>Igual</td></tr>
+          <tr><td>Coliformes totales</td><td>NMP ≤ 3/100mL</td><td>Ausencia/100mL</td><td style="color:var(--green)">PBA</td><td>PBA más estricto</td></tr>
+          <tr><td>E. coli</td><td>Ausencia/100mL</td><td>Ausencia/100mL</td><td>—</td><td>Igual</td></tr>
+          <tr><td style="color:var(--accent)">Cloro libre residual</td><td style="font-family:monospace;color:var(--accent)">≥ 0.20 mg/L</td><td style="font-family:monospace;color:var(--accent)">≥ 0.20 mg/L</td><td>—</td><td>Mínimo requerido</td></tr>
+        </tbody>
+      </table>
     </div>
-    <div class="norm-card">
-      <h4>🔗 Referencias normativas</h4>
-      <div style="font-size:12px;line-height:2">
-        <a href="https://alimentosargentinos.magyp.gob.ar/contenido/marco/CAA/Capitulo_12.php" target="_blank" style="color:var(--accent)">CAA Capítulo XII — Agua potable</a><br>
-        <a href="https://normas.gba.gob.ar/documentos/BeWelF70.html" target="_blank" style="color:var(--accent)">Ley PBA 11.820</a><br>
-        <a href="https://www.saladillo.gob.ar/?q=analisis_2026" target="_blank" style="color:var(--accent)">Informes municipales 2026</a><br>
-        <a href="https://www.saladillo.gob.ar/?q=analisis_2025" target="_blank" style="color:var(--accent)">Informes municipales 2025</a>
-      </div>
-    </div>
+  </div>
+  <div style="margin-top:10px;font-size:11px;color:var(--muted)">
+    Fuentes: <a href="https://alimentosargentinos.magyp.gob.ar/contenido/marco/CAA/Capitulo_12.php" target="_blank">CAA Cap. XII Art. 982</a> ·
+    <a href="https://normas.gba.gob.ar/documentos/BeWelF70.html" target="_blank">Ley PBA 11.820</a> ·
+    <a href="https://www.saladillo.gob.ar/?q=analisis_2026" target="_blank">Informes municipales 2026</a>
   </div>
 </div>
 
-</div><!-- /content -->
+<!-- ADMIN UBICACIONES -->
+<div class="panel" id="panel-admin">
+  <div class="alert alert-yellow">
+    <strong>⚠ Coordenadas aproximadas — editar para ubicaciones reales</strong>
+    Seleccioná un punto, ingresá la dirección o las coordenadas exactas, o hacé click en el mapa.
+    Las ediciones se guardan localmente en tu navegador (localStorage).
+  </div>
+  <div id="edit-box" class="edit-box" style="display:none">
+    <h4 id="edit-tit">Editando: —</h4>
+    <div class="form2">
+      <div><label>Latitud</label><input class="inp" type="number" id="e-lat" step="0.000001" placeholder="-35.6380"></div>
+      <div><label>Longitud</label><input class="inp" type="number" id="e-lon" step="0.000001" placeholder="-59.7820"></div>
+    </div>
+    <div style="margin-bottom:8px"><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Dirección / Referencia</label>
+      <input class="inp" type="text" id="e-dir" placeholder="Ej: Rivadavia 1234, Saladillo">
+    </div>
+    <div style="margin-bottom:10px"><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Tipo</label>
+      <select class="sel" id="e-tipo">
+        <option value="bomba">Bomba municipal</option>
+        <option value="jardin">Jardín / Escuela</option>
+        <option value="caps">CAPS</option>
+        <option value="dom">Domicilio</option>
+        <option value="cazon">Cazón</option>
+        <option value="municipal">Municipal</option>
+        <option value="otro">Otro</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn primary" onclick="guardar()">💾 Guardar</button>
+      <button class="btn danger" onclick="borrar()">🗑 Borrar coords</button>
+      <button class="btn" onclick="cancelar()">✕ Cancelar</button>
+    </div>
+    <div class="hint">💡 Hacé click en el mapa para posicionar el pin, o arrastralo</div>
+  </div>
+  <div class="admin-grid">
+    <div id="mapa-admin"></div>
+    <div class="admin-panel">
+      <div style="font-weight:600;font-size:13px;margin-bottom:8px">Puntos de muestreo (52)</div>
+      <input class="inp" type="text" id="a-buscar" placeholder="Buscar..." oninput="renderAList()" style="margin-bottom:8px">
+      <div id="a-list"></div>
+    </div>
+  </div>
+  <div style="margin-top:10px;display:flex;gap:8px">
+    <button class="btn" onclick="exportCoords()">⬇ Exportar JSON</button>
+    <button class="btn danger" onclick="resetCoords()">↩ Restaurar originales</button>
+  </div>
+</div>
+
+</div><!-- content -->
 
 <script>
-const DATOS = [{"fuente": "BOMBA 9", "fecha": "05/05/25", "fecha_iso": "2025-05-05", "Arsénico": 0.043, "Nitratos": 11.0, "Nitritos": 0.01, "Fluoruro Total": 1.39, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 1", "fecha": "08/05/25", "fecha_iso": "2025-05-08", "Arsénico": 0.041, "Nitratos": 14.0, "Nitritos": 0.01, "Fluoruro Total": 1.47, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 3", "fecha": "12/05/25", "fecha_iso": "2025-05-12", "Arsénico": 0.033, "Nitratos": 19.0, "Nitritos": 0.02, "Fluoruro Total": 1.37, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "MUNICIPALIDAD", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "SANGUINETTI 3821", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "JARDIN SANTANA", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "ALMAFUERTE 3811", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 11", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "IBARBIA 3732", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "LEDESMA 2882", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 14", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 5", "fecha": "12/06/25", "fecha_iso": "2025-06-12", "Arsénico": 0.045, "Nitratos": 20.0, "Nitritos": 0.01, "Fluoruro Total": 1.39, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 4", "fecha": "02/07/25", "fecha_iso": "2025-07-02", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "ALEM 2987", "fecha": "02/07/25", "fecha_iso": "2025-07-02", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAPS TEVES", "fecha": "02/07/25", "fecha_iso": "2025-07-02", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAZON- BOMBA 1", "fecha": "02/07/25", "fecha_iso": "2025-07-02", "Arsénico": 0.035, "Nitratos": 3.0, "Nitritos": 0.01, "Fluoruro Total": 1.0, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAZON- BOMBA 2", "fecha": "02/07/25", "fecha_iso": "2025-07-02", "Arsénico": 0.037, "Nitratos": 3.0, "Nitritos": 0.02, "Fluoruro Total": 1.36, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "LEDESMA 2982", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "NIDO", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "IBANVIA 3742", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 18", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 23", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 9", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 3", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Arsénico": 0.033, "Nitratos": 19.0, "Nitritos": 0.01, "Fluoruro Total": 1.48, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 1", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Arsénico": 0.04, "Nitratos": 1.0, "Nitritos": 0.01, "Fluoruro Total": 1.28, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 16", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Arsénico": 0.046, "Nitratos": 4.0, "Nitritos": 0.01, "Fluoruro Total": 1.48, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 14", "fecha": "26/08/25", "fecha_iso": "2025-08-26", "Arsénico": 0.045, "Nitratos": 40.0, "Nitritos": 0.01, "Fluoruro Total": 1.41, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "VIACO 3546", "fecha": "26/08/25", "fecha_iso": "2025-08-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "SANGUINETI 2821", "fecha": "26/08/25", "fecha_iso": "2025-08-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "MUNICIPALIDAD", "fecha": "26/08/25", "fecha_iso": "2025-08-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 15", "fecha": "16/09/25", "fecha_iso": "2025-09-16", "Arsénico": 0.049, "Nitratos": 5.0, "Nitritos": 0.01, "Fluoruro Total": 1.91, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 4", "fecha": "16/09/25", "fecha_iso": "2025-09-16", "Arsénico": 0.037, "Nitratos": 1.0, "Nitritos": 0.01, "Fluoruro Total": 1.83, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "TOLEDO- BAJ. TANQUE", "fecha": "16/09/25", "fecha_iso": "2025-09-16", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "LEDESMA 2982", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 17", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Arsénico": 0.046, "Nitratos": 7.0, "Nitritos": 0.01, "Fluoruro Total": 1.81, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 9", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Arsénico": 0.043, "Nitratos": 12.0, "Nitritos": 0.02, "Fluoruro Total": 1.62, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAZON- BOMBA 2", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Arsénico": 0.04, "Nitratos": 3.0, "Nitritos": 0.01, "Fluoruro Total": 1.44, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAZON- BOMBA 1", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Arsénico": 0.042, "Nitratos": 4.0, "Nitritos": 0.01, "Fluoruro Total": 1.1, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAPS DELIA", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 3", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAPS. SAN ROQUE", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 20", "fecha": "26/11/25", "fecha_iso": "2025-11-26", "Arsénico": 0.036, "Nitratos": 8.0, "Nitritos": 0.01, "Fluoruro Total": 1.53, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "MUNICIPALIDAD", "fecha": "26/11/25", "fecha_iso": "2025-11-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 12", "fecha": "26/11/25", "fecha_iso": "2025-11-26", "Arsénico": 0.037, "Nitratos": 5.0, "Nitritos": 0.01, "Fluoruro Total": 1.42, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 9", "fecha": "26/11/25", "fecha_iso": "2025-11-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 11", "fecha": "26/11/25", "fecha_iso": "2025-11-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 5", "fecha": "26/11/25", "fecha_iso": "2025-11-26", "Arsénico": 0.035, "Nitratos": 19.0, "Nitritos": 0.02, "Fluoruro Total": 1.63, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CABRAL Nº 3836", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "LEDESMA Nº3216", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 19", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Arsénico": 0.031, "Nitratos": 40.0, "Nitritos": 0.02, "Fluoruro Total": 1.3, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 15", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Arsénico": 0.033, "Nitratos": 17.0, "Nitritos": 0.02, "Fluoruro Total": 1.32, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 15", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "JARDIN Nº4", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 1", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Arsénico": 0.036, "Nitratos": 8.0, "Nitritos": 0.01, "Fluoruro Total": 1.08, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 1", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 3", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Arsénico": 0.03, "Nitratos": 17.0, "Nitritos": 0.02, "Fluoruro Total": 1.17, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "MUNICIPALIDAD", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "SANTA ANA- JARDIN", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAZON- JARDIN", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "LAUREANO- JARDIN", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "TOLEDO- JARDIN", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 3", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "DOM. M.ACOSTA Nº1923", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "DOM. SUQUIA Nº3695", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "ESCUELA Nº38", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 12", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 24", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 9", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 24", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Arsénico": 0.041, "Nitratos": 3.0, "Nitritos": 0.01, "Fluoruro Total": 1.71, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 14", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Arsénico": 0.041, "Nitratos": 41.0, "Nitritos": 0.01, "Fluoruro Total": 1.33, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 11", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 11", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Arsénico": 0.047, "Nitratos": 42.0, "Nitritos": 0.01, "Fluoruro Total": 1.51, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 20", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "POSADAS Nº2530", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 23", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "OBRAS PUBLICAS", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "JARDIN ESPERANZA", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CRF FEMENINO", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA Nº4", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Arsénico": 0.031, "Nitratos": 11.0, "Nitritos": 0.01, "Fluoruro Total": 1.6, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "ALEM Nº2865", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 17", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Arsénico": 0.043, "Nitratos": 12.0, "Nitritos": 0.01, "Fluoruro Total": 1.66, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 23", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Arsénico": 0.044, "Nitratos": 8.0, "Nitritos": 0.02, "Fluoruro Total": 1.54, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "JARDIN JULITO", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 5", "fecha": "29/04/26", "fecha_iso": "2026-04-29", "Arsénico": 0.037, "Nitratos": 21.0, "Nitritos": 0.02, "Fluoruro Total": 1.76, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 1", "fecha": "29/04/26", "fecha_iso": "2026-04-29", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "JARDIN Nº4", "fecha": "29/04/26", "fecha_iso": "2026-04-29", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}];
-const LIMITES = {"Arsénico": {"caa": 0.01, "pba": 0.01, "unidad": "mg/L"}, "Nitratos": {"caa": 45.0, "pba": 45.0, "unidad": "mg/L"}, "Nitritos": {"caa": 0.1, "pba": 0.1, "unidad": "mg/L"}, "Fluoruro Total": {"caa": 1.7, "pba": 1.7, "unidad": "mg/L"}, "Manganeso Total": {"caa": 0.1, "pba": 0.1, "unidad": "mg/L"}, "Plomo": {"caa": 0.01, "pba": 0.01, "unidad": "mg/L"}, "Cromo Total": {"caa": 0.05, "pba": 0.05, "unidad": "mg/L"}};
-const COORDS  = {"BOMBA 1": [-35.638, -59.782], "BOMBA 3": [-35.642, -59.789], "BOMBA 4": [-35.635, -59.778], "BOMBA 5": [-35.629, -59.775], "BOMBA 9": [-35.646, -59.795], "BOMBA 11": [-35.651, -59.786], "BOMBA 12": [-35.633, -59.784], "BOMBA 14": [-35.648, -59.772], "BOMBA 15": [-35.625, -59.781], "BOMBA 16": [-35.639, -59.791], "BOMBA 17": [-35.644, -59.777], "BOMBA 18": [-35.631, -59.788], "BOMBA 19": [-35.637, -59.794], "BOMBA 20": [-35.642, -59.782], "BOMBA 23": [-35.628, -59.776], "BOMBA 24": [-35.646, -59.783], "MUNICIPALIDAD": [-35.6348, -59.79], "CAZON- BOMBA 1": [-35.558, -59.609], "CAZON- BOMBA 2": [-35.56, -59.608], "CAZON- JARDIN": [-35.557, -59.61]};
+const RAW = [{"fuente": "BOMBA 9", "fecha": "05/05/25", "fecha_iso": "2025-05-05", "Arsénico": 0.043, "Nitratos": 11.0, "Nitritos": 0.01, "Fluoruro Total": 1.39, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 1", "fecha": "08/05/25", "fecha_iso": "2025-05-08", "Arsénico": 0.041, "Nitratos": 14.0, "Nitritos": 0.01, "Fluoruro Total": 1.47, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 3", "fecha": "12/05/25", "fecha_iso": "2025-05-12", "Arsénico": 0.033, "Nitratos": 19.0, "Nitritos": 0.02, "Fluoruro Total": 1.37, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "MUNICIPALIDAD", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "SANGUINETTI 3821", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "JARDIN SANTANA", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "ALMAFUERTE 3811", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 11", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "IBARBIA 3732", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "LEDESMA 2882", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 14", "fecha": "14/05/25", "fecha_iso": "2025-05-14", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 5", "fecha": "12/06/25", "fecha_iso": "2025-06-12", "Arsénico": 0.045, "Nitratos": 20.0, "Nitritos": 0.01, "Fluoruro Total": 1.39, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 4", "fecha": "02/07/25", "fecha_iso": "2025-07-02", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "ALEM 2987", "fecha": "02/07/25", "fecha_iso": "2025-07-02", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAPS TEVES", "fecha": "02/07/25", "fecha_iso": "2025-07-02", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAZON- BOMBA 1", "fecha": "02/07/25", "fecha_iso": "2025-07-02", "Arsénico": 0.035, "Nitratos": 3.0, "Nitritos": 0.01, "Fluoruro Total": 1.0, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAZON- BOMBA 2", "fecha": "02/07/25", "fecha_iso": "2025-07-02", "Arsénico": 0.037, "Nitratos": 3.0, "Nitritos": 0.02, "Fluoruro Total": 1.36, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "LEDESMA 2982", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "NIDO", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "IBANVIA 3742", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 18", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 23", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 9", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 3", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Arsénico": 0.033, "Nitratos": 19.0, "Nitritos": 0.01, "Fluoruro Total": 1.48, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 1", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Arsénico": 0.04, "Nitratos": 1.0, "Nitritos": 0.01, "Fluoruro Total": 1.28, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 16", "fecha": "18/07/25", "fecha_iso": "2025-07-18", "Arsénico": 0.046, "Nitratos": 4.0, "Nitritos": 0.01, "Fluoruro Total": 1.48, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 14", "fecha": "26/08/25", "fecha_iso": "2025-08-26", "Arsénico": 0.045, "Nitratos": 40.0, "Nitritos": 0.01, "Fluoruro Total": 1.41, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "VIACO 3546", "fecha": "26/08/25", "fecha_iso": "2025-08-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "SANGUINETI 2821", "fecha": "26/08/25", "fecha_iso": "2025-08-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "MUNICIPALIDAD", "fecha": "26/08/25", "fecha_iso": "2025-08-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 15", "fecha": "16/09/25", "fecha_iso": "2025-09-16", "Arsénico": 0.049, "Nitratos": 5.0, "Nitritos": 0.01, "Fluoruro Total": 1.91, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 4", "fecha": "16/09/25", "fecha_iso": "2025-09-16", "Arsénico": 0.037, "Nitratos": 1.0, "Nitritos": 0.01, "Fluoruro Total": 1.83, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "TOLEDO- BAJ. TANQUE", "fecha": "16/09/25", "fecha_iso": "2025-09-16", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "LEDESMA 2982", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 17", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Arsénico": 0.046, "Nitratos": 7.0, "Nitritos": 0.01, "Fluoruro Total": 1.81, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 9", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Arsénico": 0.043, "Nitratos": 12.0, "Nitritos": 0.02, "Fluoruro Total": 1.62, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAZON- BOMBA 2", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Arsénico": 0.04, "Nitratos": 3.0, "Nitritos": 0.01, "Fluoruro Total": 1.44, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAZON- BOMBA 1", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Arsénico": 0.042, "Nitratos": 4.0, "Nitritos": 0.01, "Fluoruro Total": 1.1, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAPS DELIA", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 3", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAPS. SAN ROQUE", "fecha": "24/10/25", "fecha_iso": "2025-10-24", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 20", "fecha": "26/11/25", "fecha_iso": "2025-11-26", "Arsénico": 0.036, "Nitratos": 8.0, "Nitritos": 0.01, "Fluoruro Total": 1.53, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "MUNICIPALIDAD", "fecha": "26/11/25", "fecha_iso": "2025-11-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 12", "fecha": "26/11/25", "fecha_iso": "2025-11-26", "Arsénico": 0.037, "Nitratos": 5.0, "Nitritos": 0.01, "Fluoruro Total": 1.42, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 9", "fecha": "26/11/25", "fecha_iso": "2025-11-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 11", "fecha": "26/11/25", "fecha_iso": "2025-11-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 5", "fecha": "26/11/25", "fecha_iso": "2025-11-26", "Arsénico": 0.035, "Nitratos": 19.0, "Nitritos": 0.02, "Fluoruro Total": 1.63, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0, "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CABRAL Nº 3836", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "LEDESMA Nº3216", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 19", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Arsénico": 0.031, "Nitratos": 40.0, "Nitritos": 0.02, "Fluoruro Total": 1.3, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 15", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Arsénico": 0.033, "Nitratos": 17.0, "Nitritos": 0.02, "Fluoruro Total": 1.32, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 15", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "JARDIN Nº4", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 1", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Arsénico": 0.036, "Nitratos": 8.0, "Nitritos": 0.01, "Fluoruro Total": 1.08, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 1", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 3", "fecha": "13/01/26", "fecha_iso": "2026-01-13", "Arsénico": 0.03, "Nitratos": 17.0, "Nitritos": 0.02, "Fluoruro Total": 1.17, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "MUNICIPALIDAD", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "SANTA ANA- JARDIN", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CAZON- JARDIN", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "LAUREANO- JARDIN", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "TOLEDO- JARDIN", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 3", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "DOM. M.ACOSTA Nº1923", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "DOM. SUQUIA Nº3695", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "ESCUELA Nº38", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 12", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 24", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 9", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 24", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Arsénico": 0.041, "Nitratos": 3.0, "Nitritos": 0.01, "Fluoruro Total": 1.71, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 14", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Arsénico": 0.041, "Nitratos": 41.0, "Nitritos": 0.01, "Fluoruro Total": 1.33, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 11", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 11", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Arsénico": 0.047, "Nitratos": 42.0, "Nitritos": 0.01, "Fluoruro Total": 1.51, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 20", "fecha": "12/02/26", "fecha_iso": "2026-02-12", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "POSADAS Nº2530", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 23", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "OBRAS PUBLICAS", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "JARDIN ESPERANZA", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "CRF FEMENINO", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA Nº4", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Arsénico": 0.031, "Nitratos": 11.0, "Nitritos": 0.01, "Fluoruro Total": 1.6, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "ALEM Nº2865", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 17", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Arsénico": 0.043, "Nitratos": 12.0, "Nitritos": 0.01, "Fluoruro Total": 1.66, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 23", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Arsénico": 0.044, "Nitratos": 8.0, "Nitritos": 0.02, "Fluoruro Total": 1.54, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "JARDIN JULITO", "fecha": "26/03/26", "fecha_iso": "2026-03-26", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "BOMBA 5", "fecha": "29/04/26", "fecha_iso": "2026-04-29", "Arsénico": 0.037, "Nitratos": 21.0, "Nitritos": 0.02, "Fluoruro Total": 1.76, "Manganeso Total": 0.0, "Plomo": 0.0, "Cromo Total": 0.0}, {"fuente": "BOMBA 1", "fecha": "29/04/26", "fecha_iso": "2026-04-29", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}, {"fuente": "JARDIN Nº4", "fecha": "29/04/26", "fecha_iso": "2026-04-29", "Coliformes Totales": 1.0, "Escherichia Coli": 0.0, "Pseudomona Aeruginosa": 0.0}];
+const LIM = {"Arsénico": {"caa": 0.01, "pba": 0.01, "unidad": "mg/L", "nota": "PBA igual CAA. Prórroga activa por hidroarsenicismo regional."}, "Nitratos": {"caa": 45.0, "pba": 45.0, "unidad": "mg/L", "nota": "Mismo límite ambas normas."}, "Nitritos": {"caa": 0.1, "pba": 0.1, "unidad": "mg/L", "nota": "Mismo límite ambas normas."}, "Fluoruro Total": {"caa": 1.7, "pba": 1.3, "unidad": "mg/L", "nota": "PBA más estricto: 1.3 mg/L (zona templada). CAA: 1.7 mg/L máx."}, "Manganeso Total": {"caa": 0.1, "pba": 0.1, "unidad": "mg/L", "nota": "Mismo límite ambas normas."}, "Plomo": {"caa": 0.05, "pba": 0.01, "unidad": "mg/L", "nota": "PBA más estricto: 0.01 mg/L. CAA: 0.05 mg/L."}, "Cromo Total": {"caa": 0.05, "pba": 0.05, "unidad": "mg/L", "nota": "Mismo límite ambas normas."}, "Hierro Total": {"caa": 0.3, "pba": 0.3, "unidad": "mg/L", "nota": "Mismo límite ambas normas."}, "Cloro Libre": {"caa": 0.2, "pba": 0.2, "unidad": "mg/L", "nota": "Mínimo requerido. No máximo.", "es_minimo": true}};
+const CDEF = {"BOMBA 1": {"lat": -35.638, "lon": -59.782, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 3": {"lat": -35.642, "lon": -59.789, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 4": {"lat": -35.635, "lon": -59.778, "tipo": "bomba", "dir": "Aprox."}, "BOMBA Nº4": {"lat": -35.635, "lon": -59.778, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 5": {"lat": -35.629, "lon": -59.775, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 9": {"lat": -35.646, "lon": -59.795, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 11": {"lat": -35.651, "lon": -59.786, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 12": {"lat": -35.633, "lon": -59.784, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 14": {"lat": -35.648, "lon": -59.772, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 15": {"lat": -35.625, "lon": -59.781, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 16": {"lat": -35.639, "lon": -59.791, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 17": {"lat": -35.644, "lon": -59.777, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 18": {"lat": -35.631, "lon": -59.788, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 19": {"lat": -35.637, "lon": -59.794, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 20": {"lat": -35.642, "lon": -59.782, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 23": {"lat": -35.628, "lon": -59.776, "tipo": "bomba", "dir": "Aprox."}, "BOMBA 24": {"lat": -35.646, "lon": -59.783, "tipo": "bomba", "dir": "Aprox."}, "MUNICIPALIDAD": {"lat": -35.6348, "lon": -59.79, "tipo": "municipal", "dir": "Mitre y Sarmiento"}, "CAZON- BOMBA 1": {"lat": -35.558, "lon": -59.609, "tipo": "bomba", "dir": "Cazón"}, "CAZON- BOMBA 2": {"lat": -35.56, "lon": -59.608, "tipo": "bomba", "dir": "Cazón"}, "CAZON- JARDIN": {"lat": -35.557, "lon": -59.61, "tipo": "jardin", "dir": "Cazón"}, "LAUREANO- JARDIN": {"lat": -35.52, "lon": -59.71, "tipo": "jardin", "dir": "Pueblo Nuevo"}, "SANTA ANA- JARDIN": {"lat": -35.69, "lon": -59.82, "tipo": "jardin", "dir": "Santa Ana"}, "TOLEDO- JARDIN": {"lat": -35.71, "lon": -59.76, "tipo": "jardin", "dir": "Toledo"}, "TOLEDO- BAJ. TANQUE": {"lat": -35.711, "lon": -59.762, "tipo": "otro", "dir": "Toledo"}};
 
-const DARK = {
-  bg:'#161b22', text:'#e6edf3', muted:'#8b949e',
-  grid:'rgba(48,54,61,0.5)', border:'#30363d'
-};
-const COLORES = {
-  ok:'#3fb950', warn:'#d29922', bad:'#f85149',
-  blue:'#58a6ff', orange:'#f0a500'
-};
+let COORDS = {};
+let DF = [...RAW];
+let dark = true;
+let sCol = 'fecha_iso', sDir = 1;
+let mAgua = null, mAdmin = null;
+let editando = null, aMarkers = {};
+let charts = {};
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
-function getColor(param, val) {
-  const lim = LIMITES[param];
-  if (!lim || val === undefined || val === null) return COLORES.blue;
-  return val > lim.caa ? COLORES.bad : val > lim.caa * 0.8 ? COLORES.warn : COLORES.ok;
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const tc = () => dark ? '#8b949e' : '#656d76';
+const gc = () => dark ? 'rgba(48,54,61,0.4)' : 'rgba(208,215,222,0.5)';
+const TT = () => ({backgroundColor:dark?'#161b22':'#fff',borderColor:dark?'#30363d':'#d0d7de',borderWidth:1,titleColor:tc(),bodyColor:tc()});
+
+function limC(param, val) {
+  const l = LIM[param]; if (!l||val===undefined) return '#58a6ff';
+  const ref = l.is_minimo ? -Infinity : Math.min(l.caa, l.pba);
+  return val > ref ? '#f85149' : val > ref*0.85 ? '#d29922' : '#3fb950';
 }
-function fmtVal(val, dec=4) {
-  if (val === undefined || val === null) return '—';
-  return Number(val).toFixed(dec);
-}
-
-// ── Tabs ─────────────────────────────────────────────────────────────────────
-function showPanel(id, el) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('panel-' + id).classList.add('active');
-  el.classList.add('active');
-  if (id === 'mapa') initMapa();
-}
-
-// ── Stat cards ───────────────────────────────────────────────────────────────
-function initStats() {
-  const conAs   = DATOS.filter(d => d['Arsénico'] !== undefined);
-  const sobreAs = conAs.filter(d => d['Arsénico'] > 0.01);
-  const conNo3  = DATOS.filter(d => d['Nitratos'] !== undefined);
-  const sobreNo3= conNo3.filter(d => d['Nitratos'] > 45);
-  const conF    = DATOS.filter(d => d['Fluoruro Total'] !== undefined);
-  const sobreF  = conF.filter(d => d['Fluoruro Total'] > 1.7);
-  const fuentes = [...new Set(DATOS.map(d=>d.fuente))];
-
-  const cards = [
-    { label:'Total muestras', val:DATOS.length, sub:'Mayo 2025 – Abr 2026', cls:'ok' },
-    { label:'Puntos de muestreo', val:fuentes.length, sub:'Bombas, CAPS, jardines', cls:'ok' },
-    { label:'Arsénico sobre límite', val:sobreAs.length+'/'+conAs.length, sub:'Límite CAA: 0.010 mg/L', cls:'bad' },
-    { label:'Nitratos sobre límite', val:sobreNo3.length+'/'+conNo3.length, sub:'Límite CAA: 45 mg/L', cls:sobreNo3.length>0?'warn':'ok' },
-    { label:'Fluoruro sobre límite', val:sobreF.length+'/'+conF.length, sub:'Límite CAA: 1.7 mg/L', cls:sobreF.length>0?'warn':'ok' },
-    { label:'E. Coli detectada', val:DATOS.filter(d=>d['Escherichia Coli']>0).length, sub:'De '+DATOS.filter(d=>d['Escherichia Coli']!==undefined).length+' muestras bacteriológicas', cls:'ok' },
-  ];
-  document.getElementById('stat-grid').innerHTML = cards.map(c =>
-    `<div class="stat-card ${c.cls}">
-      <div class="stat-label">${c.label}</div>
-      <div class="stat-val">${c.val}</div>
-      <div class="stat-sub">${c.sub}</div>
-    </div>`
-  ).join('');
-}
-
-// ── Gráfico arsénico resumen ──────────────────────────────────────────────────
-function initChartAs() {
-  const datos = DATOS.filter(d => d['Arsénico'] !== undefined);
-  // Último valor por fuente
-  const porFuente = {};
-  datos.forEach(d => { porFuente[d.fuente] = d['Arsénico']; });
-  const fuentes = Object.keys(porFuente).sort();
-  const vals    = fuentes.map(f => porFuente[f]);
-  const colors  = vals.map(v => v > 0.01 ? COLORES.bad : COLORES.ok);
-
-  new Chart(document.getElementById('chart-as'), {
-    type:'bar',
-    data:{
-      labels: fuentes,
-      datasets:[{
-        label:'Arsénico (mg/L)',
-        data: vals,
-        backgroundColor: colors,
-        borderRadius: 4,
-      }]
-    },
-    options:{
-      responsive:true,
-      plugins:{
-        legend:{display:false},
-        tooltip:{
-          backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,
-          callbacks:{
-            label: ctx => `${ctx.parsed.y.toFixed(4)} mg/L ${ctx.parsed.y>0.01?' ⚠ SOBRE LÍMITE':' ✓ OK'}`
-          }
-        },
-        annotation:{}
-      },
-      scales:{
-        x:{ticks:{color:DARK.muted,font:{size:10},maxRotation:45},grid:{color:DARK.grid}},
-        y:{
-          ticks:{color:DARK.muted,font:{size:10},callback:v=>v.toFixed(3)},
-          grid:{color:DARK.grid},
-          title:{display:true,text:'mg/L',color:DARK.muted},
-        }
-      }
-    }
-  });
-
-  // Línea de límite — anotación manual
-  const chart = Chart.getChart('chart-as');
-  // Dibujar línea de límite con plugin personalizado
-}
-
-// ── Gráfico nitratos resumen ──────────────────────────────────────────────────
-function initChartNo3() {
-  const datos = DATOS.filter(d => d['Nitratos'] !== undefined);
-  const porFuente = {};
-  datos.forEach(d => { porFuente[d.fuente] = d['Nitratos']; });
-  const fuentes = Object.keys(porFuente).sort();
-  const vals    = fuentes.map(f => porFuente[f]);
-  const colors  = vals.map(v => v > 45 ? COLORES.bad : v > 36 ? COLORES.warn : COLORES.ok);
-
-  new Chart(document.getElementById('chart-no3'), {
-    type:'bar',
-    data:{
-      labels: fuentes,
-      datasets:[{
-        label:'Nitratos (mg/L)',
-        data: vals,
-        backgroundColor: colors,
-        borderRadius: 4,
-      }]
-    },
-    options:{
-      responsive:true,
-      plugins:{ legend:{display:false},
-        tooltip:{ backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,
-          callbacks:{ label: ctx => `${ctx.parsed.y.toFixed(1)} mg/L ${ctx.parsed.y>45?' ⚠ SOBRE LÍMITE':ctx.parsed.y>36?' ⚡ Cerca del límite':' ✓ OK'}` }
-        }
-      },
-      scales:{
-        x:{ticks:{color:DARK.muted,font:{size:10},maxRotation:45},grid:{color:DARK.grid}},
-        y:{ticks:{color:DARK.muted,font:{size:10}},grid:{color:DARK.grid},
-          title:{display:true,text:'mg/L',color:DARK.muted}}
-      }
-    }
-  });
-}
-
-// ── Gráfico parámetros ────────────────────────────────────────────────────────
-let chartParam = null;
-function renderParamChart() {
-  const param = document.getElementById('sel-param').value;
-  const vista = document.getElementById('sel-vista').value;
-  const lim   = LIMITES[param];
-  const datos = DATOS.filter(d => d[param] !== undefined);
-
-  document.getElementById('param-titulo').textContent =
-    `${param} — ${vista==='puntos'?'por punto de muestreo':'evolución temporal'}`;
-
-  let labels, vals, colors;
-
-  if (vista === 'puntos') {
-    const porFuente = {};
-    datos.forEach(d => { porFuente[d.fuente] = d[param]; });
-    labels = Object.keys(porFuente).sort();
-    vals   = labels.map(f => porFuente[f]);
-  } else {
-    const ordenados = [...datos].sort((a,b)=>a.fecha_iso.localeCompare(b.fecha_iso));
-    labels = ordenados.map(d => `${d.fuente} ${d.fecha}`);
-    vals   = ordenados.map(d => d[param]);
-  }
-
-  colors = vals.map(v => lim ? (v > lim.caa ? COLORES.bad : v > lim.caa*0.8 ? COLORES.warn : COLORES.ok) : COLORES.blue);
-
-  if (chartParam) chartParam.destroy();
-  chartParam = new Chart(document.getElementById('chart-param'), {
-    type: 'bar',
-    data:{
-      labels,
-      datasets:[
-        { label:param, data:vals, backgroundColor:colors, borderRadius:3 },
-        lim ? { label:'Límite CAA', data:new Array(labels.length).fill(lim.caa),
-          type:'line', borderColor:'rgba(248,81,73,0.7)', borderWidth:1.5,
-          borderDash:[5,3], pointRadius:0, fill:false } : null
-      ].filter(Boolean)
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{ legend:{labels:{color:DARK.muted,font:{size:11},boxWidth:12}},
-        tooltip:{ backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,
-          callbacks:{ label: ctx => ctx.dataset.label===param ?
-            `${ctx.parsed.y.toFixed(4)} ${lim?.unidad||''} ${lim&&ctx.parsed.y>lim.caa?' ⚠ SOBRE LÍMITE':''}` :
-            `Límite: ${ctx.parsed.y} ${lim?.unidad||''}` }
-        }
-      },
-      scales:{
-        x:{ticks:{color:DARK.muted,font:{size:9},maxRotation:50},grid:{color:DARK.grid}},
-        y:{ticks:{color:DARK.muted,font:{size:10}},grid:{color:DARK.grid},
-          title:{display:true,text:lim?.unidad||'',color:DARK.muted}}
-      }
-    }
-  });
-
-  const n = vals.length;
-  const sobre = lim ? vals.filter(v=>v>lim.caa).length : 0;
-  const prom  = vals.reduce((a,b)=>a+b,0)/n;
-  document.getElementById('param-resumen').textContent =
-    `n=${n} muestras · promedio=${prom.toFixed(4)} ${lim?.unidad||''}` +
-    (lim ? ` · sobre límite=${sobre}/${n} (${Math.round(sobre/n*100)}%)` : '');
-}
-
-// ── Mapa ──────────────────────────────────────────────────────────────────────
-let mapaInit = false;
-function initMapa() {
-  if (mapaInit) return;
-  mapaInit = true;
-
-  const mapa = L.map('mapa-agua').setView([-35.638, -59.788], 13);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution:'© OpenStreetMap · CartoDB', maxZoom:18
-  }).addTo(mapa);
-
-  // Último valor de arsénico por fuente
-  const porFuente = {};
-  DATOS.forEach(d => {
-    if (!porFuente[d.fuente]) porFuente[d.fuente] = d;
-    else if (d.fecha_iso > porFuente[d.fuente].fecha_iso) porFuente[d.fuente] = d;
-  });
-
-  Object.entries(COORDS).forEach(([fuente, [lat, lon]]) => {
-    const d   = porFuente[fuente];
-    const as  = d?.['Arsénico'];
-    const color = as === undefined ? '#8b949e' : as > 0.01 ? '#f85149' : '#3fb950';
-
-    const marker = L.circleMarker([lat, lon], {
-      radius: 9, fillColor: color, color: '#fff',
-      weight: 1.5, opacity: 1, fillOpacity: 0.85
-    }).addTo(mapa);
-
-    let popup = `<div style="font-family:monospace;font-size:12px;min-width:180px">
-      <strong style="color:#58a6ff">${fuente}</strong><br>
-      ${d ? `<span style="color:#8b949e">${d.fecha}</span><br>` : ''}`;
-    if (as !== undefined) {
-      const c = as > 0.01 ? '#f85149' : '#3fb950';
-      popup += `Arsénico: <span style="color:${c};font-weight:bold">${as.toFixed(4)} mg/L</span> ${as>0.01?'⚠':'✓'}<br>`;
-    }
-    if (d?.['Nitratos'] !== undefined)
-      popup += `Nitratos: ${d['Nitratos'].toFixed(1)} mg/L<br>`;
-    if (d?.['Fluoruro Total'] !== undefined)
-      popup += `Fluoruro: ${d['Fluoruro Total'].toFixed(2)} mg/L<br>`;
-    popup += '</div>';
-    marker.bindPopup(popup);
-  });
-
-  // Leyenda
-  const leyenda = L.control({position:'bottomright'});
-  leyenda.onAdd = () => {
-    const div = L.DomUtil.create('div');
-    div.style.cssText = 'background:#161b22;border:1px solid #30363d;padding:8px 12px;border-radius:6px;font-size:11px;color:#e6edf3';
-    div.innerHTML = `<div style="margin-bottom:4px;font-weight:600">Arsénico</div>
-      <div><span style="color:#f85149">●</span> Sobre límite (>0.01)</div>
-      <div><span style="color:#3fb950">●</span> Dentro del límite</div>
-      <div><span style="color:#8b949e">●</span> Sin datos de metales</div>`;
-    return div;
-  };
-  leyenda.addTo(mapa);
-}
-
-// ── Tabla ─────────────────────────────────────────────────────────────────────
-function initTabla() {
-  const sel = document.getElementById('sel-fuente');
-  const fuentes = [...new Set(DATOS.map(d=>d.fuente))].sort();
-  fuentes.forEach(f => {
-    const opt = document.createElement('option');
-    opt.value = f; opt.textContent = f;
-    sel.appendChild(opt);
-  });
-  renderTabla();
-}
-
-function renderTabla() {
-  const filtro = document.getElementById('sel-fuente').value;
-  const datos  = filtro ? DATOS.filter(d=>d.fuente===filtro) : DATOS;
-  const tbody  = document.getElementById('tbody-datos');
-  tbody.innerHTML = datos.map(d => {
-    const as  = d['Arsénico'];
-    const no3 = d['Nitratos'];
-    const f   = d['Fluoruro Total'];
-    const no2 = d['Nitritos'];
-    const ct  = d['Coliformes Totales'];
-    const ec  = d['Escherichia Coli'];
-    const cls = v => v===undefined?'':v>0?'val-bad':'val-ok';
-    const clsMetal = (v,lim) => v===undefined?'':v>lim?'val-bad':v>lim*0.8?'val-warn':'val-ok';
-    return `<tr>
-      <td style="font-weight:500">${d.fuente}</td>
-      <td style="font-family:monospace;font-size:11px;color:#8b949e">${d.fecha}</td>
-      <td class="${clsMetal(as,0.01)}">${as!==undefined?as.toFixed(4):'—'}</td>
-      <td class="${clsMetal(no3,45)}">${no3!==undefined?no3.toFixed(1):'—'}</td>
-      <td class="${clsMetal(f,1.7)}">${f!==undefined?f.toFixed(2):'—'}</td>
-      <td class="${clsMetal(no2,0.1)}">${no2!==undefined?no2.toFixed(3):'—'}</td>
-      <td class="${cls(ct)}">${ct!==undefined?(ct>0?'<span class="badge badge-warn">PRESENTE</span>':'<span class="badge badge-ok">Ausente</span>'):'—'}</td>
-      <td class="${ec>0?'val-bad':'val-ok'}">${ec!==undefined?(ec>0?'<span class="badge badge-bad">DETECTADA</span>':'<span class="badge badge-ok">Ausente</span>'):'—'}</td>
-    </tr>`;
-  }).join('');
+function fv(v, d=4) { return v===undefined||v===null ? '—' : Number(v).toFixed(d); }
+function inferTipo(f) {
+  const u=f.toUpperCase();
+  if(u.includes('BOMBA')) return 'bomba';
+  if(u.includes('JARDIN')||u.includes('JARDÍN')||u.includes('ESCUELA')||u.includes('NIDO')) return 'jardin';
+  if(u.includes('CAPS')||u.includes('CRF')) return 'caps';
+  if(u.match(/^[A-Z]+ \d{3,}/)) return 'dom';
+  if(u.includes('CAZON')||u.includes('LAUREANO')||u.includes('SANTA ANA')||u.includes('TOLEDO')) return 'cazon';
+  if(u.includes('MUNICIPAL')||u.includes('OBRAS')) return 'municipal';
+  return 'otro';
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-initStats();
-initChartAs();
-initChartNo3();
-renderParamChart();
-initTabla();
+function init() {
+  const saved = localStorage.getItem('agua_coords_sal');
+  COORDS = saved ? JSON.parse(saved) : {};
+  Object.entries(CDEF).forEach(([k,v]) => { if(!COORDS[k]) COORDS[k]=v; });
+  RAW.forEach(d => { if(!COORDS[d.fuente]) COORDS[d.fuente]={lat:null,lon:null,tipo:inferTipo(d.fuente),dir:''}; });
+  filtrar();
+}
+
+// ── Tema ──────────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  dark = !dark;
+  document.documentElement.setAttribute('data-theme', dark?'':'light');
+  document.getElementById('btn-theme').textContent = dark?'☀️ Claro':'🌙 Oscuro';
+  Object.values(charts).forEach(c=>c?.destroy());
+  charts = {};
+  const act = document.querySelector('.panel.active')?.id.replace('panel-','');
+  if(act==='resumen') renderResumen();
+  else if(act==='punto') renderPunto();
+  else if(act==='parametros') renderParam();
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function showP(id, el) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='mapa') setTimeout(()=>initMapaAgua(),80);
+  if(id==='admin') setTimeout(()=>initMapaAdmin(),80);
+  if(id==='parametros') renderParam();
+}
+
+// ── Filtros ───────────────────────────────────────────────────────────────────
+function filtrar() {
+  const tipo   = document.getElementById('g-tipo').value;
+  const desde  = document.getElementById('g-desde').value;
+  const hasta  = document.getElementById('g-hasta').value;
+  const estado = document.getElementById('g-estado').value;
+  DF = RAW.filter(d => {
+    if(tipo && COORDS[d.fuente]?.tipo !== tipo) return false;
+    if(desde && d.fecha_iso < desde) return false;
+    if(hasta && d.fecha_iso > hasta) return false;
+    if(estado==='sobre') {
+      const s = Object.entries(LIM).some(([p,l])=>d[p]!==undefined&&!l.is_minimo&&d[p]>Math.min(l.caa,l.pba));
+      if(!s) return false;
+    }
+    if(estado==='ok') {
+      const s = Object.entries(LIM).some(([p,l])=>d[p]!==undefined&&!l.is_minimo&&d[p]>Math.min(l.caa,l.pba));
+      if(s) return false;
+    }
+    return true;
+  });
+  document.getElementById('f-info').textContent = DF.length+' de '+RAW.length+' registros';
+  renderResumen();
+  renderTabla();
+  if(mAgua) renderMapa();
+  if(document.getElementById('panel-parametros').classList.contains('active')) renderParam();
+}
+function clearF() {
+  ['g-tipo','g-estado'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('g-desde').value='2025-05-01';
+  document.getElementById('g-hasta').value='2026-12-31';
+  filtrar();
+}
+
+// ── Resumen ───────────────────────────────────────────────────────────────────
+function renderResumen() {
+  const conAs=DF.filter(d=>d['Arsénico']!==undefined), sobreAs=conAs.filter(d=>d['Arsénico']>0.01);
+  const conNo3=DF.filter(d=>d['Nitratos']!==undefined), sobreNo3=conNo3.filter(d=>d['Nitratos']>45);
+  const conF=DF.filter(d=>d['Fluoruro Total']!==undefined), sobreF=conF.filter(d=>d['Fluoruro Total']>1.3);
+  const conBact=DF.filter(d=>d['Coliformes Totales']!==undefined), conEc=DF.filter(d=>d['Escherichia Coli']>0);
+  const fuentes=[...new Set(DF.map(d=>d.fuente))];
+
+  document.getElementById('stat-grid').innerHTML=[
+    {l:'Muestras',v:DF.length,s:'en período filtrado',c:'info'},
+    {l:'Puntos únicos',v:fuentes.length,s:'fuentes distintas',c:'info'},
+    {l:'As sobre límite',v:sobreAs.length+'/'+conAs.length,s:'CAA/PBA: 0.010 mg/L',c:'bad'},
+    {l:'Nitratos ↑',v:sobreNo3.length+'/'+conNo3.length,s:'> 45 mg/L',c:sobreNo3.length?'warn':'ok'},
+    {l:'Fluoruro ↑ (PBA)',v:sobreF.length+'/'+conF.length,s:'> 1.3 mg/L',c:sobreF.length?'warn':'ok'},
+    {l:'E. Coli detectada',v:conEc.length,s:'de '+conBact.length+' bact.',c:conEc.length?'bad':'ok'},
+  ].map(c=>`<div class="sc ${c.c}"><div class="sc-lbl">${c.l}</div><div class="sc-val">${c.v}</div><div class="sc-sub">${c.s}</div></div>`).join('');
+
+  barPorFuente('c-as',DF,'Arsénico',4);
+  barPorFuente('c-no3',DF,'Nitratos',1);
+  barPorFuente('c-f',DF,'Fluoruro Total',2);
+}
+
+function barPorFuente(id,datos,param,dec) {
+  if(charts[id]) charts[id].destroy();
+  const pf={};
+  datos.filter(d=>d[param]!==undefined).forEach(d=>{if(!pf[d.fuente]||d.fecha_iso>pf[d.fuente].fecha_iso) pf[d.fuente]=d;});
+  const fuentes=Object.keys(pf).sort(), vals=fuentes.map(f=>pf[f][param]);
+  const l=LIM[param];
+  charts[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels:fuentes,datasets:[
+    {label:param,data:vals,backgroundColor:vals.map(v=>limC(param,v)),borderRadius:3},
+    l?{label:'Lím.CAA '+l.caa,data:new Array(fuentes.length).fill(l.caa),type:'line',borderColor:'rgba(88,166,255,.7)',borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false}:null,
+    (l&&l.pba!==l.caa)?{label:'Lím.PBA '+l.pba,data:new Array(fuentes.length).fill(l.pba),type:'line',borderColor:'rgba(63,185,80,.7)',borderWidth:1.5,borderDash:[3,3],pointRadius:0,fill:false}:null,
+  ].filter(Boolean)},options:{responsive:true,plugins:{legend:{labels:{color:tc(),font:{size:10},boxWidth:10}},tooltip:{...TT()}},
+    scales:{x:{ticks:{color:tc(),font:{size:9},maxRotation:45},grid:{color:gc()}},y:{ticks:{color:tc(),font:{size:10},callback:v=>v.toFixed(dec)},grid:{color:gc()}}}}});
+}
+
+// ── Por punto de muestreo ─────────────────────────────────────────────────────
+function renderPunto() {
+  const fuente = document.getElementById('p-fuente').value;
+  const cont   = document.getElementById('punto-contenido');
+  if(!fuente) { cont.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">Seleccioná un punto</div>'; return; }
+
+  const datos = RAW.filter(d=>d.fuente===fuente).sort((a,b)=>a.fecha_iso.localeCompare(b.fecha_iso));
+  if(!datos.length) { cont.innerHTML='<div style="padding:20px;color:var(--muted)">Sin datos para esta fuente</div>'; return; }
+
+  const coords = COORDS[fuente];
+  const params = Object.keys(LIM).filter(p=>datos.some(d=>d[p]!==undefined));
+  const paramsB = ['Coliformes Totales','Escherichia Coli','Pseudomona Aeruginosa'].filter(p=>datos.some(d=>d[p]!==undefined));
+
+  // Última muestra
+  const ult = datos[datos.length-1];
+  const fichaRows = [...params,...paramsB].map(p=>{
+    const v=ult[p]; if(v===undefined) return '';
+    const l=LIM[p]; const ref=l&&!l.is_minimo?Math.min(l.caa,l.pba):null;
+    const color=ref?(v>ref?'var(--red)':v>ref*0.85?'var(--yellow)':'var(--green)'):'var(--text)';
+    const limTxt=l?` (lím. CAA:${l.caa} / PBA:${l.pba} ${l.unidad})`:'';
+    return `<div class="ficha-row"><span>${p}</span><span style="color:${color};font-weight:600">${fv(v,4)} ${l?.unidad||''} ${ref&&v>ref?'⚠':''}</span></div>`;
+  }).join('');
+
+  cont.innerHTML = `
+    <div class="ficha">
+      <div class="ficha-info">
+        <h3>${fuente}</h3>
+        <div class="ficha-row"><span>Tipo</span><span>${coords?.tipo||inferTipo(fuente)}</span></div>
+        <div class="ficha-row"><span>Dirección</span><span>${coords?.dir||'Sin datos'}</span></div>
+        <div class="ficha-row"><span>Coordenadas</span><span style="font-family:var(--mono);font-size:11px">${coords?.lat?coords.lat.toFixed(5)+', '+coords.lon.toFixed(5):'<span class="no-coords">Sin georef.</span>'}</span></div>
+        <div class="ficha-row"><span>Muestras</span><span>${datos.length} análisis</span></div>
+        <div class="ficha-row"><span>Período</span><span>${datos[0].fecha} → ${ult.fecha}</span></div>
+        <div style="margin-top:10px;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">ÚLTIMA MUESTRA (${ult.fecha})</div>
+        ${fichaRows}
+      </div>
+      <div id="punto-charts"></div>
+    </div>
+    <div id="punto-temporal" class="cbox" style="margin-top:0">
+      <h3>Evolución temporal — todos los parámetros fisicoquímicos</h3>
+      <div style="position:relative;height:320px"><canvas id="c-punto-multi"></canvas></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:12px" id="punto-ind"></div>
+  `;
+
+  // Gráfico multi-parámetro normalizado (% del límite)
+  const fechas = [...new Set(datos.map(d=>d.fecha_iso))].sort();
+  const colors2 = ['#58a6ff','#3fb950','#f0a500','#f85149','#bc8cff','#39d353','#ff7b72'];
+  const datasets2 = params.map((p,i)=>{
+    const l=LIM[p]; if(!l||l.is_minimo) return null;
+    const ref=Math.min(l.caa,l.pba);
+    return {
+      label:p+' (% lím.)',
+      data:fechas.map(f=>{const d=datos.find(x=>x.fecha_iso===f&&x[p]!==undefined); return d?Math.round(d[p]/ref*100):null;}),
+      borderColor:colors2[i%colors2.length],backgroundColor:colors2[i%colors2.length]+'22',
+      borderWidth:2,pointRadius:4,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:false,
+    };
+  }).filter(Boolean);
+
+  if(charts['punto-multi']) charts['punto-multi'].destroy();
+  charts['punto-multi']=new Chart(document.getElementById('c-punto-multi'),{type:'line',
+    data:{labels:fechas,datasets:datasets2},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:tc(),font:{size:10},boxWidth:10}},
+        tooltip:{...TT(),callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}% del límite`}}},
+      scales:{
+        x:{ticks:{color:tc(),font:{size:9}},grid:{color:gc()}},
+        y:{ticks:{color:tc(),font:{size:10},callback:v=>v+'%'},grid:{color:gc()},
+          title:{display:true,text:'% respecto al límite (100% = límite máximo)',color:tc()}}
+      }
+    }
+  });
+
+  // Gráficos individuales por parámetro
+  const indCont = document.getElementById('punto-ind');
+  params.forEach((p,i)=>{
+    const l=LIM[p]; if(!l) return;
+    const div=document.createElement('div');
+    div.className='cbox'; div.style.marginBottom='0';
+    div.innerHTML=`<h3>${p} <small style="color:var(--muted);font-weight:400">${l.unidad}</small></h3><canvas id="c-pi-${i}" style="max-height:180px"></canvas>`;
+    indCont.appendChild(div);
+    const vals=datos.map(d=>d[p]??null);
+    const ref=l.is_minimo?null:Math.min(l.caa,l.pba);
+    if(charts['pi'+i]) charts['pi'+i].destroy();
+    charts['pi'+i]=new Chart(document.getElementById('c-pi-'+i),{type:'bar',
+      data:{labels:datos.map(d=>d.fecha),datasets:[
+        {label:p,data:vals,backgroundColor:vals.map(v=>v!==null?limC(p,v):'#8b949e44'),borderRadius:3},
+        ref?{label:'Lím. CAA',data:new Array(datos.length).fill(l.caa),type:'line',borderColor:'rgba(88,166,255,.6)',borderWidth:1.5,borderDash:[4,3],pointRadius:0,fill:false}:null,
+        (ref&&l.pba!==l.caa)?{label:'Lím. PBA',data:new Array(datos.length).fill(l.pba),type:'line',borderColor:'rgba(63,185,80,.6)',borderWidth:1.5,borderDash:[3,3],pointRadius:0,fill:false}:null,
+      ].filter(Boolean)},
+      options:{responsive:true,plugins:{legend:{labels:{color:tc(),font:{size:9},boxWidth:8}},tooltip:{...TT()}},
+        scales:{x:{ticks:{color:tc(),font:{size:9},maxRotation:45},grid:{color:gc()}},
+          y:{ticks:{color:tc(),font:{size:9},callback:v=>v.toFixed(3)},grid:{color:gc()}}}}
+    });
+  });
+}
+
+// ── Parámetros ────────────────────────────────────────────────────────────────
+function renderParam() {
+  const param=document.getElementById('pp-param').value;
+  const vista=document.getElementById('pp-vista').value;
+  const norma=document.getElementById('pp-norma').value;
+  const l=LIM[param];
+  const datos=DF.filter(d=>d[param]!==undefined);
+  document.getElementById('pp-titulo').textContent=`${param} — ${{puntos:'por punto',temporal:'temporal',histo:'distribución'}[vista]}`;
+  let labels,vals;
+  if(vista==='puntos'){
+    const pf={};
+    datos.forEach(d=>{if(!pf[d.fuente]||d.fecha_iso>pf[d.fuente].fecha_iso) pf[d.fuente]=d;});
+    labels=Object.keys(pf).sort(); vals=labels.map(f=>pf[f][param]);
+  } else if(vista==='temporal') {
+    const ord=[...datos].sort((a,b)=>a.fecha_iso.localeCompare(b.fecha_iso));
+    labels=ord.map(d=>d.fecha+' '+d.fuente.slice(0,8)); vals=ord.map(d=>d[param]);
+  } else {
+    const mn=Math.min(...datos.map(d=>d[param])),mx=Math.max(...datos.map(d=>d[param]));
+    const bins=8,step=(mx-mn)/bins;
+    labels=Array.from({length:bins},(_,i)=>(mn+i*step).toFixed(4)+'–'+(mn+(i+1)*step).toFixed(4));
+    vals=Array.from({length:bins},(_,i)=>datos.filter(d=>d[param]>=mn+i*step&&d[param]<mn+(i+1)*step).length);
+  }
+  const colors=vista!=='histo'?vals.map(v=>limC(param,v)):vals.map(()=>'#58a6ff');
+  const ds=[{label:param,data:vals,backgroundColor:colors,borderRadius:3}];
+  if(l&&vista!=='histo'){
+    if(norma==='caa'||norma==='ambas') ds.push({label:'Lím.CAA ('+l.caa+')',data:new Array(vals.length).fill(l.caa),type:'line',borderColor:'rgba(88,166,255,.8)',borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false});
+    if((norma==='pba'||norma==='ambas')&&l.pba!==l.caa) ds.push({label:'Lím.PBA ('+l.pba+')',data:new Array(vals.length).fill(l.pba),type:'line',borderColor:'rgba(63,185,80,.8)',borderWidth:1.5,borderDash:[3,3],pointRadius:0,fill:false});
+  }
+  if(charts['param']) charts['param'].destroy();
+  charts['param']=new Chart(document.getElementById('c-param'),{type:'bar',data:{labels,datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:tc(),font:{size:11},boxWidth:12}},tooltip:{...TT(),callbacks:{label:ctx=>ctx.dataset.label===param?`${ctx.parsed.y.toFixed(4)} ${l?.unidad||''}${l&&ctx.parsed.y>Math.min(l.caa,l.pba)?' ⚠':''}`:ctx.dataset.label}}},
+      scales:{x:{ticks:{color:tc(),font:{size:9},maxRotation:50},grid:{color:gc()}},y:{ticks:{color:tc(),font:{size:10}},grid:{color:gc()},title:{display:true,text:l?.unidad||'',color:tc()}}}}});
+  if(datos.length>0){
+    const n=datos.length,prom=datos.reduce((a,d)=>a+d[param],0)/n;
+    const mn=Math.min(...datos.map(d=>d[param])),mx=Math.max(...datos.map(d=>d[param]));
+    const sC=l?datos.filter(d=>d[param]>l.caa).length:0,sP=l?datos.filter(d=>d[param]>l.pba).length:0;
+    document.getElementById('pp-stats').innerHTML=`
+      <div class="ftit" style="margin-bottom:8px">Estadísticas del parámetro seleccionado</div>
+      <div class="fgrid">
+        <div><span style="color:var(--muted)">n = </span>${n} muestras</div>
+        <div><span style="color:var(--muted)">Promedio = </span>${prom.toFixed(4)} ${l?.unidad||''}</div>
+        <div><span style="color:var(--muted)">Mín = </span>${mn.toFixed(4)}</div>
+        <div><span style="color:var(--muted)">Máx = </span>${mx.toFixed(4)}</div>
+        ${l?`<div style="color:var(--red)">Sobre lím. CAA = ${sC}/${n} (${Math.round(sC/n*100)}%)</div>`:''}
+        ${l&&l.pba!==l.caa?`<div style="color:var(--yellow)">Sobre lím. PBA = ${sP}/${n} (${Math.round(sP/n*100)}%)</div>`:''}
+      </div>
+      ${l?`<div style="margin-top:8px;padding:8px 10px;background:var(--surf2);border-radius:6px;font-size:11px">
+        ${l.caa===l.pba?`✓ Límites CAA y PBA coinciden: ${l.caa} ${l.unidad}`:`⚡ CAA: ${l.caa} · PBA: ${l.pba} ${l.unidad} — ${l.nota||''}`}
+      </div>`:''}
+    `;
+  }
+}
+
+// ── Mapa agua ─────────────────────────────────────────────────────────────────
+let aguaM=[];
+function initMapaAgua(){
+  if(mAgua){renderMapa();return;}
+  mAgua=L.map('mapa-agua').setView([-35.638,-59.788],13);
+  L.tileLayer(dark?'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png':'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    {attribution:'© OSM · CartoDB',maxZoom:19}).addTo(mAgua);
+  renderMapa();
+}
+function renderMapa(){
+  if(!mAgua) return;
+  aguaM.forEach(m=>mAgua.removeLayer(m)); aguaM=[];
+  const param=document.getElementById('m-param').value, l=LIM[param];
+  const pf={};
+  DF.filter(d=>d[param]!==undefined).forEach(d=>{if(!pf[d.fuente]||d.fecha_iso>pf[d.fuente].fecha_iso) pf[d.fuente]=d;});
+  Object.entries(COORDS).forEach(([fuente,c])=>{
+    if(!c.lat||!c.lon) return;
+    const d=pf[fuente]; const color=d?limC(param,d[param]):'#8b949e';
+    const m=L.circleMarker([c.lat,c.lon],{radius:9,fillColor:color,color:'#fff',weight:1.5,opacity:1,fillOpacity:.85}).addTo(mAgua);
+    let pop=`<div style="font-family:monospace;font-size:12px;min-width:180px"><strong style="color:#58a6ff">${fuente}</strong><br>`;
+    if(c.dir&&!c.dir.includes('Aprox')) pop+=`<span style="color:#8b949e">${c.dir}</span><br>`;
+    if(d){
+      const ref=l?Math.min(l.caa,l.pba):null;
+      const color2=ref?(d[param]>ref?'#f85149':'#3fb950'):'#e6edf3';
+      pop+=`${param}: <span style="color:${color2};font-weight:700">${fv(d[param],4)} ${l?.unidad||''}</span> ${ref&&d[param]>ref?'⚠':''}<br>`;
+      pop+=`<span style="color:#8b949e">Fecha: ${d.fecha}</span>`;
+    } else pop+='<span style="color:#8b949e">Sin datos de este parámetro</span>';
+    pop+='</div>';
+    m.bindPopup(pop);
+    aguaM.push(m);
+  });
+}
+
+// ── Tabla ─────────────────────────────────────────────────────────────────────
+function renderTabla(){
+  const ord=[...DF].sort((a,b)=>{const va=a[sCol]??'',vb=b[sCol]??'';return (va<vb?-1:va>vb?1:0)*sDir;});
+  document.getElementById('t-titulo').textContent=`${DF.length} registros`;
+  const cls=(v,lim)=>v===undefined?'':v>lim?'vbad':v>lim*0.85?'vwarn':'vok';
+  const bdg=(v)=>v===undefined?'—':v>0?`<span class="bdg bdg-bad">${v>0?v.toFixed(0):'+'}</span>`:`<span class="bdg bdg-ok">Aus.</span>`;
+  document.getElementById('tbody').innerHTML=ord.map(d=>`<tr>
+    <td style="font-weight:500">${d.fuente}</td>
+    <td style="font-family:monospace;color:var(--muted)">${d.fecha}</td>
+    <td class="${cls(d['Arsénico'],0.01)}">${fv(d['Arsénico'],4)}</td>
+    <td class="${cls(d['Nitratos'],45)}">${fv(d['Nitratos'],1)}</td>
+    <td class="${cls(d['Fluoruro Total'],1.3)}">${fv(d['Fluoruro Total'],2)}</td>
+    <td class="${cls(d['Nitritos'],0.1)}">${fv(d['Nitritos'],3)}</td>
+    <td class="${cls(d['Plomo'],0.01)}">${fv(d['Plomo'],4)}</td>
+    <td>${bdg(d['Coliformes Totales'])}</td>
+    <td>${bdg(d['Escherichia Coli'])}</td>
+  </tr>`).join('');
+}
+function srt(col){if(sCol===col)sDir*=-1;else{sCol=col;sDir=1;}renderTabla();}
+function exportCSV(){
+  const cols=['fuente','fecha_iso','Arsénico','Nitratos','Fluoruro Total','Nitritos','Plomo','Cromo Total','Manganeso Total','Coliformes Totales','Escherichia Coli'];
+  const csv=[cols.join(','),...DF.map(d=>cols.map(c=>d[c]??'').join(','))].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='agua_saladillo.csv';a.click();
+}
+
+// ── Admin ubicaciones ─────────────────────────────────────────────────────────
+function initMapaAdmin(){
+  if(mAdmin){renderAMarkers();return;}
+  mAdmin=L.map('mapa-admin').setView([-35.638,-59.788],13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OSM · CartoDB',maxZoom:19}).addTo(mAdmin);
+  mAdmin.on('click',e=>{
+    if(editando){
+      document.getElementById('e-lat').value=e.latlng.lat.toFixed(6);
+      document.getElementById('e-lon').value=e.latlng.lng.toFixed(6);
+      if(aMarkers[editando]) aMarkers[editando].setLatLng(e.latlng);
+      else { aMarkers[editando]=L.marker(e.latlng,{draggable:true}).addTo(mAdmin);
+        aMarkers[editando].on('dragend',ev=>{document.getElementById('e-lat').value=ev.target.getLatLng().lat.toFixed(6);document.getElementById('e-lon').value=ev.target.getLatLng().lng.toFixed(6);}); }
+    }
+  });
+  renderAList();
+  renderAMarkers();
+}
+
+function renderAList(q=''){
+  q=q||document.getElementById('a-buscar').value.toLowerCase();
+  const fuentes=[...new Set(RAW.map(d=>d.fuente))].sort();
+  document.getElementById('a-list').innerHTML=fuentes.filter(f=>f.toLowerCase().includes(q)).map(f=>{
+    const c=COORDS[f],ok=c?.lat&&c?.lon;
+    return `<div class="fi-item ${editando===f?'sel':''}" onclick="selF('${f.replace(/'/g,"\'")}')">
+      <div class="fi-name">${f} <span class="fi-tipo">${c?.tipo||inferTipo(f)}</span></div>
+      <div class="fi-det">${ok?c.lat.toFixed(5)+', '+c.lon.toFixed(5):'<span class="no-coords">⚠ Sin coordenadas</span>'}${c?.dir&&!c.dir.includes('Aprox')?' · '+c.dir:''}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderAMarkers(){
+  Object.values(aMarkers).forEach(m=>mAdmin?.removeLayer(m)); aMarkers={};
+  Object.entries(COORDS).forEach(([f,c])=>{
+    if(!c.lat||!c.lon) return;
+    const color=f===editando?'#f0a500':'#58a6ff';
+    aMarkers[f]=L.circleMarker([c.lat,c.lon],{radius:7,fillColor:color,color:'#fff',weight:1.5,fillOpacity:.85}).addTo(mAdmin);
+    aMarkers[f].bindTooltip(f,{permanent:false,direction:'top'});
+    aMarkers[f].on('click',()=>selF(f));
+  });
+}
+
+function selF(f){
+  editando=f; const c=COORDS[f];
+  document.getElementById('edit-box').style.display='block';
+  document.getElementById('edit-tit').textContent='Editando: '+f;
+  document.getElementById('e-lat').value=c?.lat||'';
+  document.getElementById('e-lon').value=c?.lon||'';
+  document.getElementById('e-dir').value=c?.dir?.includes('Aprox')?'':c?.dir||'';
+  document.getElementById('e-tipo').value=c?.tipo||inferTipo(f);
+  renderAList();renderAMarkers();
+  if(c?.lat&&c?.lon&&mAdmin) mAdmin.setView([c.lat,c.lon],16);
+}
+
+function guardar(){
+  const lat=parseFloat(document.getElementById('e-lat').value);
+  const lon=parseFloat(document.getElementById('e-lon').value);
+  const dir=document.getElementById('e-dir').value.trim();
+  const tipo=document.getElementById('e-tipo').value;
+  if(isNaN(lat)||isNaN(lon)){alert('Coordenadas inválidas');return;}
+  COORDS[editando]={lat,lon,dir,tipo};
+  localStorage.setItem('agua_coords_sal',JSON.stringify(COORDS));
+  renderAList();renderAMarkers();cancelar();
+}
+function borrar(){
+  if(!confirm('¿Borrar coordenadas de '+editando+'?')) return;
+  COORDS[editando]={lat:null,lon:null,dir:'',tipo:COORDS[editando]?.tipo||'otro'};
+  localStorage.setItem('agua_coords_sal',JSON.stringify(COORDS));
+  renderAList();renderAMarkers();cancelar();
+}
+function cancelar(){editando=null;document.getElementById('edit-box').style.display='none';renderAList();renderAMarkers();}
+function exportCoords(){
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(COORDS,null,2));
+  a.download='coords_agua_saladillo.json';a.click();
+}
+function resetCoords(){
+  if(!confirm('¿Restaurar coordenadas originales?')) return;
+  localStorage.removeItem('agua_coords_sal');
+  COORDS={}; Object.entries(CDEF).forEach(([k,v])=>{COORDS[k]=v;});
+  RAW.forEach(d=>{if(!COORDS[d.fuente]) COORDS[d.fuente]={lat:null,lon:null,tipo:inferTipo(d.fuente),dir:''};});
+  renderAList();renderAMarkers();
+}
+
+init();
 </script>
 </body>
 </html>
