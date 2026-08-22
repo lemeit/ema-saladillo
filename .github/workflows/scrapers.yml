@@ -28,7 +28,7 @@ jobs:
           cache: 'pip'
 
       - name: Instalar dependencias Python
-        run: pip install requests beautifulsoup4 pillow numpy urllib3
+        run: pip install requests beautifulsoup4 pillow numpy urllib3 pytesseract
 
       - name: Instalar Tesseract OCR
         run: |
