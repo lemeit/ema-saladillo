@@ -27,9 +27,12 @@ import os
 import requests
 from datetime import datetime, timezone, timedelta
 
-CF_ACCOUNT_ID = os.environ.get("CF_ACCOUNT_ID", "")
-CF_DATABASE_ID = os.environ.get("CF_DATABASE_ID", "")
-CF_API_TOKEN = os.environ.get("CF_API_TOKEN", "")
+# .strip() por las dudas: es común que un secret de GitHub Actions quede
+# con un salto de línea de sobra al pegarlo (rompe la URL de la API con un
+# "%0A" invisible y Cloudflare responde 403 Forbidden sin más explicación).
+CF_ACCOUNT_ID = os.environ.get("CF_ACCOUNT_ID", "").strip()
+CF_DATABASE_ID = os.environ.get("CF_DATABASE_ID", "").strip()
+CF_API_TOKEN = os.environ.get("CF_API_TOKEN", "").strip()
 
 D1_URL = (
     f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}"
