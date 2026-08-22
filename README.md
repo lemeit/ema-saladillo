@@ -71,7 +71,7 @@ El Worker `worker/src/index.js` expone rutas compatibles con el formato PostgRES
 
 Laboratorio de Industrias · 7° Año Técnico Químico  
 EEST N°1 "Gral. Savio" · Saladillo · Buenos Aires · 2026  
-Ing. Luciano Lamaita
+Ing. Luciano Lamaita — más proyectos y materiales en [profe.lemeit.ar](https://profe.lemeit.ar)
 
 ## Licencia
 
