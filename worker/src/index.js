@@ -1,0 +1,218 @@
+/**
+ * API para el dashboard de EMA Saladillo, sobre Cloudflare D1.
+ *
+ * Compatibilidad: expone las mismas rutas y forma de consulta que el
+ * dashboard ya usaba contra Supabase/PostgREST (select=, order=, limit=,
+ * columna=eq.valor), así que index.html no necesita reescribirse — solo
+ * apuntar SUPA_URL a esta API. Internamente las 4 tablas viejas
+ * (mediciones_ema/cfr/dc/cs) viven unificadas en una sola tabla D1
+ * `mediciones` con columna `estacion`.
+ *
+ * Rutas:
+ *   GET /rest/v1/mediciones_ema | mediciones_cfr | mediciones_dc | mediciones_cs
+ *       ?select=...&order=campo.asc|desc&limit=N&codigo=eq.X&parametro=eq.X
+ *   GET /rest/v1/v_temperatura_comparativa?select=hora,eet,cfr,dc,cs&order=hora.asc&limit=N
+ *   GET /rest/v1/v_ema_armonizada?select=hora,estacion,valor&parametro=eq.CANON&order=hora.asc&limit=N
+ */
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, apikey, Authorization",
+};
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
+
+// tabla vieja de Supabase -> código de estación en la tabla unificada `mediciones`
+const TABLE_MAP = {
+  mediciones_ema: "EMA-EET",
+  mediciones_cfr: "EMA-CFR",
+  mediciones_dc: "EMA-DC",
+  mediciones_cs: "EMA-CS",
+};
+
+// nombre de estación que usaba la vista v_ema_armonizada (distinto del código interno)
+const ARMONIZADA_NOMBRE = {
+  "EMA-EET": "EET N°1",
+  "EMA-CFR": "CFR",
+  "EMA-DC": "DC",
+  "EMA-CS": "CS",
+};
+
+// parámetro canónico (el que usaba v_ema_armonizada/v_temperatura_comparativa)
+// -> identificador propio de cada estación (codigo numérico para EET, texto para el resto)
+const CANON_MAP = {
+  Temperatura: { eet: 14, cfr: "Temperatura", dc: "Temperatura", cs: "Temperatura" },
+  Humedad: { eet: 18, cfr: "Humedad", dc: "Humedad", cs: "Humedad" },
+  Presion: { eet: 218, cfr: "Presion Barometrica", dc: "Presion", cs: "Presion" },
+  "Velocidad Viento": { eet: 4, cfr: "Velocidad del Viento", dc: "Velocidad Viento", cs: "Velocidad Viento" },
+  Rafaga: { eet: null, cfr: null, dc: "Rafaga", cs: "Rafaga" },
+  "Direccion Viento": { eet: 5, cfr: "Direccion del Viento", dc: "Direccion Viento", cs: null },
+  Lluvia: { eet: 20, cfr: "Lluvia Diaria", dc: "Lluvia Acumulada", cs: "Lluvia Diaria" },
+  "Punto de Rocio": { eet: null, cfr: "Punto de Rocio", dc: "Punto de Rocio", cs: "Punto de Rocio" },
+  "Radiacion Solar": { eet: null, cfr: "Radiacion Solar", dc: null, cs: "Radiacion Solar" },
+};
+
+function pad(n) {
+  return String(n).padStart(2, "0");
+}
+
+// 'YYYY-MM-DD HH:MM:SS' (UTC) -> 'DD/MM/YYYY HH:MM' (hora Argentina, UTC-3, sin horario de verano)
+function utcAFechaAr(utcStr) {
+  if (!utcStr) return null;
+  const [datePart, timePart] = utcStr.split(" ");
+  const [y, m, d] = datePart.split("-").map(Number);
+  const [hh, mm] = (timePart || "00:00:00").split(":").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d, hh, mm));
+  dt.setUTCHours(dt.getUTCHours() - 3);
+  return `${pad(dt.getUTCDate())}/${pad(dt.getUTCMonth() + 1)}/${dt.getUTCFullYear()} ${pad(dt.getUTCHours())}:${pad(dt.getUTCMinutes())}`;
+}
+
+function buildRow(r, selectFields) {
+  const full = {
+    codigo: r.codigo,
+    parametro: r.parametro,
+    unidad: r.unidad,
+    valor: r.valor,
+    valor_texto: r.valor_texto,
+    fecha_hora_ar: utcAFechaAr(r.fecha_hora_utc),
+    fecha_hora_utc: r.fecha_hora_utc,
+    insertado_en: r.fecha_hora_utc, // alias: mismo instante, ya no distinguimos hora de inserción
+  };
+  if (!selectFields || selectFields.length === 0) return full;
+  const out = {};
+  for (const f of selectFields) out[f] = full[f];
+  return out;
+}
+
+function parseOrderDir(orderParam) {
+  const [, dir] = (orderParam || "").split(".");
+  return dir && dir.toLowerCase() === "asc" ? "ASC" : "DESC";
+}
+
+async function handleMediciones(env, tabla, params) {
+  const estacion = TABLE_MAP[tabla];
+  const selectFields = (params.get("select") || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const dir = parseOrderDir(params.get("order"));
+  const limit = Math.min(parseInt(params.get("limit") || "100", 10) || 100, 5000);
+
+  let where = "estacion = ?";
+  const binds = [estacion];
+
+  const codigoEq = params.get("codigo");
+  if (codigoEq && codigoEq.startsWith("eq.")) {
+    where += " AND codigo = ?";
+    binds.push(Number(codigoEq.slice(3)));
+  }
+  const parametroEq = params.get("parametro");
+  if (parametroEq && parametroEq.startsWith("eq.")) {
+    where += " AND parametro = ?";
+    binds.push(decodeURIComponent(parametroEq.slice(3)));
+  }
+
+  const sql = `SELECT codigo, parametro, unidad, valor, valor_texto, fecha_hora_utc
+               FROM mediciones WHERE ${where} ORDER BY fecha_hora_utc ${dir} LIMIT ?`;
+  binds.push(limit);
+
+  const { results } = await env.DB.prepare(sql).bind(...binds).all();
+  return json(results.map((r) => buildRow(r, selectFields)));
+}
+
+async function handleTemperaturaComparativa(env, params) {
+  const limit = Math.min(parseInt(params.get("limit") || "500", 10) || 500, 20000);
+  const stations = [
+    ["EMA-EET", "eet", "codigo", 14],
+    ["EMA-CFR", "cfr", "parametro", "Temperatura"],
+    ["EMA-DC", "dc", "parametro", "Temperatura"],
+    ["EMA-CS", "cs", "parametro", "Temperatura"],
+  ];
+
+  const porEstacion = {};
+  for (const [estacion, clave, columna, valor] of stations) {
+    const sql = `SELECT strftime('%Y-%m-%d %H', fecha_hora_utc) AS hora, AVG(valor) AS valor
+                 FROM mediciones WHERE estacion = ? AND ${columna} = ?
+                 GROUP BY hora`;
+    const { results } = await env.DB.prepare(sql).bind(estacion, valor).all();
+    porEstacion[clave] = {};
+    for (const r of results) porEstacion[clave][r.hora] = r.valor;
+  }
+
+  const horas = [
+    ...new Set([
+      ...Object.keys(porEstacion.eet),
+      ...Object.keys(porEstacion.cfr),
+      ...Object.keys(porEstacion.dc),
+      ...Object.keys(porEstacion.cs),
+    ]),
+  ].sort();
+
+  const filas = horas.slice(0, limit).map((h) => ({
+    hora: h,
+    eet: porEstacion.eet[h] ?? null,
+    cfr: porEstacion.cfr[h] ?? null,
+    dc: porEstacion.dc[h] ?? null,
+    cs: porEstacion.cs[h] ?? null,
+  }));
+  return json(filas);
+}
+
+async function handleArmonizada(env, params) {
+  const parametroEq = params.get("parametro");
+  const canon = parametroEq && parametroEq.startsWith("eq.") ? decodeURIComponent(parametroEq.slice(3)) : null;
+  const limit = Math.min(parseInt(params.get("limit") || "2000", 10) || 2000, 40000);
+  const mapa = canon ? CANON_MAP[canon] : null;
+  if (!mapa) return json([]);
+
+  const stations = [
+    ["EMA-EET", "codigo", mapa.eet],
+    ["EMA-CFR", "parametro", mapa.cfr],
+    ["EMA-DC", "parametro", mapa.dc],
+    ["EMA-CS", "parametro", mapa.cs],
+  ];
+
+  let filas = [];
+  for (const [estacion, columna, valor] of stations) {
+    if (valor === null || valor === undefined) continue;
+    const sql = `SELECT strftime('%Y-%m-%d %H', fecha_hora_utc) AS hora, AVG(valor) AS valor, COUNT(*) AS n_registros
+                 FROM mediciones WHERE estacion = ? AND ${columna} = ?
+                 GROUP BY hora`;
+    const { results } = await env.DB.prepare(sql).bind(estacion, valor).all();
+    for (const r of results) {
+      filas.push({ hora: r.hora, estacion: ARMONIZADA_NOMBRE[estacion], valor: r.valor, n_registros: r.n_registros });
+    }
+  }
+  filas.sort((a, b) => (a.hora < b.hora ? -1 : a.hora > b.hora ? 1 : 0));
+  return json(filas.slice(0, limit));
+}
+
+export default {
+  async fetch(request, env) {
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: CORS_HEADERS });
+    }
+
+    const url = new URL(request.url);
+    const match = url.pathname.match(/^\/rest\/v1\/([a-z_]+)$/);
+    if (!match) return json({ error: "Not found" }, 404);
+
+    const tabla = match[1];
+    const params = url.searchParams;
+
+    try {
+      if (tabla === "v_temperatura_comparativa") return await handleTemperaturaComparativa(env, params);
+      if (tabla === "v_ema_armonizada") return await handleArmonizada(env, params);
+      if (TABLE_MAP[tabla]) return await handleMediciones(env, tabla, params);
+      return json({ error: `tabla desconocida: ${tabla}` }, 404);
+    } catch (err) {
+      return json({ error: err.message }, 500);
+    }
+  },
+};
