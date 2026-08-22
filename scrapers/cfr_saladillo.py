@@ -3,7 +3,7 @@ cfr_saladillo.py
 ================
 Scraper para la EMA del CFR Saladillo.
 Extrae datos del HTML de https://ema.cfrsaladillo.edu.ar/
-y los guarda en Supabase (tabla mediciones_cfr).
+y los guarda en Cloudflare D1 (tabla unificada `mediciones`, estación EMA-CFR).
 
 Parámetros extraídos:
   Temperatura actual      [°C]   celda 8
@@ -17,9 +17,9 @@ Parámetros extraídos:
   Radiación solar         [W/m²] celda 113
 
 Uso:
-    python cfr_saladillo.py              # scraping + guarda en Supabase
+    python cfr_saladillo.py              # scraping + guarda en D1
     python cfr_saladillo.py --csv        # también exporta CSV local
-    python cfr_saladillo.py --nosupa     # solo consola, sin Supabase
+    python cfr_saladillo.py --nod1       # solo consola, sin D1
     python cfr_saladillo.py --loop 3600  # repite cada 1 hora
 
 Dependencias:
@@ -45,28 +45,19 @@ except ImportError:
     print("  ✖ Falta BeautifulSoup4. Instalá con: pip install beautifulsoup4")
     exit(1)
 
+from d1_writer import guardar_en_d1
+
 # ─── Configuración ─────────────────────────────────────────────────────────────
-URL_CFR    = "https://ema.cfrsaladillo.edu.ar/"
-ESTACION   = "CFR-Saladillo"
-TIMEOUT    = 15
+URL_CFR     = "https://ema.cfrsaladillo.edu.ar/"
+ESTACION    = "CFR-Saladillo"
+ESTACION_D1 = "EMA-CFR"
+TIMEOUT     = 15
 
 warnings.filterwarnings("ignore", category=InsecureRequestWarning)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; EEST-Saladillo-script/1.0)",
     "Accept-Language": "es-AR,es;q=0.9",
-}
-
-# ─── Supabase ──────────────────────────────────────────────────────────────────
-SUPA_URL   = os.environ.get("SUPA_URL", "")
-SUPA_KEY   = os.environ.get("SUPA_KEY", "")
-SUPA_TABLA = "mediciones_cfr"
-
-HEADERS_SUPA = {
-    "apikey":        SUPA_KEY,
-    "Authorization": f"Bearer {SUPA_KEY}",
-    "Content-Type":  "application/json",
-    "Prefer":        "resolution=ignore-duplicates",
 }
 
 # ─── Zona horaria Argentina ────────────────────────────────────────────────────
@@ -162,26 +153,15 @@ def obtener_datos_cfr():
     return resultados
 
 
-# ─── Supabase ──────────────────────────────────────────────────────────────────
-def guardar_en_supabase(datos):
-    """Inserta los datos en mediciones_cfr. Ignora duplicados."""
+# ─── D1 (Cloudflare) ────────────────────────────────────────────────────────────
+def guardar_en_d1_desde_cfr(datos):
+    """Inserta los datos en la tabla unificada `mediciones` (estación EMA-CFR)."""
     filas = [d for d in datos if d["valor"] is not None]
-    if not filas:
-        return 0
-
-    url  = f"{SUPA_URL}/rest/v1/{SUPA_TABLA}"
-    resp = requests.post(url, headers=HEADERS_SUPA,
-                         data=json.dumps(filas), timeout=15)
-    if resp.status_code in (200, 201):
-        return len(filas)
-    elif resp.status_code == 409:
-        return 0
-    else:
-        raise RuntimeError(f"Supabase HTTP {resp.status_code}: {resp.text[:200]}")
+    return guardar_en_d1(ESTACION_D1, filas)
 
 
 # ─── Consola ───────────────────────────────────────────────────────────────────
-def mostrar_consola(datos, insertados=None):
+def mostrar_consola(datos, enviados=None):
     print()
     print("╔══════════════════════════════════════════════════════╗")
     print("║   EMA CFR Saladillo                                  ║")
@@ -192,11 +172,8 @@ def mostrar_consola(datos, insertados=None):
         val = f"{d['valor']:.1f} {d['unidad']}" if d['valor'] is not None else "Sin dato"
         print(f"║  {d['parametro']:<28} {val:<14}  {d['fecha_hora_ar']}  ║")
     print("╠══════════════════════════════════════════════════════╣")
-    if insertados is not None:
-        if insertados > 0:
-            print(f"║  Supabase: {insertados} filas insertadas ✔                      ║")
-        else:
-            print(f"║  Supabase: sin cambios (datos ya existían)               ║")
+    if enviados is not None:
+        print(f"║  D1: {enviados} filas enviadas ✔                              ║")
     print("╚══════════════════════════════════════════════════════╝")
     print()
 
@@ -213,10 +190,10 @@ def exportar_csv(datos, archivo="cfr_actuales.csv"):
 
 # ─── Main ──────────────────────────────────────────────────────────────────────
 def main():
-    parser = argparse.ArgumentParser(description="EMA CFR Saladillo → Supabase")
-    parser.add_argument("--csv",    action="store_true", help="Exportar CSV")
-    parser.add_argument("--nosupa", action="store_true", help="No guardar en Supabase")
-    parser.add_argument("--loop",   type=int, default=0,
+    parser = argparse.ArgumentParser(description="EMA CFR Saladillo → Cloudflare D1")
+    parser.add_argument("--csv",  action="store_true", help="Exportar CSV")
+    parser.add_argument("--nod1", action="store_true", help="No guardar en D1")
+    parser.add_argument("--loop", type=int, default=0,
                         help="Repetir cada N segundos (ej: --loop 3600)")
     args = parser.parse_args()
 
@@ -224,14 +201,14 @@ def main():
         try:
             datos = obtener_datos_cfr()
 
-            insertados = None
-            if not args.nosupa:
+            enviados = None
+            if not args.nod1:
                 try:
-                    insertados = guardar_en_supabase(datos)
+                    enviados = guardar_en_d1_desde_cfr(datos)
                 except Exception as e:
-                    print(f"  ⚠  Supabase: {e}")
+                    print(f"  ⚠  D1: {e}")
 
-            mostrar_consola(datos, insertados)
+            mostrar_consola(datos, enviados)
 
             if args.csv:
                 exportar_csv(datos)
@@ -253,7 +230,4 @@ def main():
 
 
 if __name__ == "__main__":
-    if not SUPA_URL or not SUPA_KEY:
-        print("  ⚠  Variables SUPA_URL / SUPA_KEY no definidas — sin Supabase")
-
     main()

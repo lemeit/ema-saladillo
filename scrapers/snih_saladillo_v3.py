@@ -1,17 +1,17 @@
 """
 snih_saladillo_v3.py
 ====================
-Obtiene datos de la EMA Saladillo (SNIH) y los guarda en Supabase.
+Obtiene datos de la EMA Saladillo (SNIH) y los guarda en Cloudflare D1
+(tabla unificada `mediciones`, estación EMA-EET).
 
-Estación : 284094  (red RMET=28 + ID=4094)
-Tabla    : mediciones_ema  (proyecto Training Hub / EEST N°1)
+Estación SNIH : 284094  (red RMET=28 + ID=4094)
 
 Uso:
-    python snih_saladillo_v3.py              # consulta + guarda en Supabase
+    python snih_saladillo_v3.py              # consulta + guarda en D1
     python snih_saladillo_v3.py --csv        # también exporta CSV local
     python snih_saladillo_v3.py --json       # muestra JSON crudo del SNIH
     python snih_saladillo_v3.py --loop 3600  # repite cada 1 hora (3600 seg)
-    python snih_saladillo_v3.py --nosupa     # solo consola, sin Supabase
+    python snih_saladillo_v3.py --nod1       # solo consola, sin D1
 
 Dependencias:
     pip install requests
@@ -31,6 +31,10 @@ import warnings
 from urllib3.exceptions import InsecureRequestWarning
 from datetime import datetime, timezone, timedelta
 
+from d1_writer import guardar_en_d1
+
+ESTACION_D1 = "EMA-EET"
+
 # ─── Configuración SNIH ────────────────────────────────────────────────────────
 ESTACION     = "284094"
 URL_ACTUALES = "https://snih.hidricosargentina.gob.ar/MuestraDatos.aspx/LeerDatosActuales"
@@ -45,18 +49,6 @@ HEADERS_SNIH = {
     "X-Requested-With": "XMLHttpRequest",
     "Referer":          "https://snih.hidricosargentina.gob.ar/MuestraDatos.aspx",
     "User-Agent":       "Mozilla/5.0 (compatible; EEST-Saladillo-script/3.0)",
-}
-
-# ─── Configuración Supabase ────────────────────────────────────────────────────
-SUPA_URL     = os.environ.get("SUPA_URL", "")
-SUPA_KEY     = os.environ.get("SUPA_KEY", "")
-SUPA_TABLA   = "mediciones_ema"
-
-HEADERS_SUPA = {
-    "apikey":        SUPA_KEY,
-    "Authorization": f"Bearer {SUPA_KEY}",
-    "Content-Type":  "application/json",
-    "Prefer":        "resolution=ignore-duplicates",  # ignora si ya existe el registro
 }
 
 # ─── Zona horaria Argentina ────────────────────────────────────────────────────
@@ -119,13 +111,12 @@ def obtener_datos_actuales():
     return meds
 
 
-# ─── Supabase ──────────────────────────────────────────────────────────────────
-def guardar_en_supabase(mediciones):
+# ─── D1 (Cloudflare) ────────────────────────────────────────────────────────────
+def guardar_en_d1_desde_snih(mediciones):
     """
-    Inserta las mediciones en la tabla mediciones_ema.
-    Usa 'ignore-duplicates' para no fallar si el dato ya existe
-    (mismo estacion + codigo + fecha_hora_utc).
-    Devuelve (insertados, duplicados).
+    Convierte las mediciones del SNIH al formato de d1_writer e inserta
+    en la tabla unificada `mediciones` (estación EMA-EET).
+    Devuelve la cantidad de filas enviadas a D1.
     """
     filas = []
     for m in mediciones:
@@ -138,33 +129,18 @@ def guardar_en_supabase(mediciones):
             continue
 
         filas.append({
-            "estacion":       ESTACION,
             "codigo":         codigo,
             "parametro":      meta["nombre"],
             "unidad":         meta.get("unidad", "?"),
             "valor":          round(float(valor), meta.get("dec", 2)),
-            "fecha_hora_ar":  formato_ar(dt_utc),
-            "fecha_hora_utc": dt_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "fecha_hora_utc": dt_utc.strftime("%Y-%m-%d %H:%M:%S"),
         })
 
-    if not filas:
-        return 0, 0
-
-    url  = f"{SUPA_URL}/rest/v1/{SUPA_TABLA}"
-    resp = requests.post(url, headers=HEADERS_SUPA,
-                         data=json.dumps(filas), timeout=15)
-
-    if resp.status_code in (200, 201):
-        return len(filas), 0
-    elif resp.status_code == 409:
-        # Conflicto parcial — algunos ya existían
-        return 0, len(filas)
-    else:
-        raise RuntimeError(f"Supabase HTTP {resp.status_code}: {resp.text[:200]}")
+    return guardar_en_d1(ESTACION_D1, filas)
 
 
 # ─── Consola ───────────────────────────────────────────────────────────────────
-def mostrar_consola(mediciones, resultado_supa=None):
+def mostrar_consola(mediciones, resultado_d1=None):
     ahora_ar = datetime.now(tz=TZ_AR).strftime("%d/%m/%Y %H:%M")
     print()
     print("╔══════════════════════════════════════════════════════╗")
@@ -177,12 +153,8 @@ def mostrar_consola(mediciones, resultado_supa=None):
         meta   = PARAMETROS.get(codigo, {"nombre": m.get("NombreCodigo", f"Cod {codigo}")})
         print(f"║  {meta['nombre']:<28} {formatear_valor(m):<14}  {formato_ar(parse_fecha(m['FechaHora']))}  ║")
     print("╠══════════════════════════════════════════════════════╣")
-    if resultado_supa:
-        ins, dup = resultado_supa
-        if ins > 0:
-            print(f"║  Supabase: {ins} filas insertadas ✔                      ║")
-        else:
-            print(f"║  Supabase: datos ya existían (sin duplicar)              ║")
+    if resultado_d1 is not None:
+        print(f"║  D1: {resultado_d1} filas enviadas ✔                          ║")
     print("╚══════════════════════════════════════════════════════╝")
     print()
 
@@ -214,11 +186,11 @@ def exportar_csv(mediciones, archivo="saladillo_actuales.csv"):
 
 # ─── Main ──────────────────────────────────────────────────────────────────────
 def main():
-    parser = argparse.ArgumentParser(description="EMA Saladillo → Supabase")
-    parser.add_argument("--csv",    action="store_true", help="Exportar CSV local")
-    parser.add_argument("--json",   action="store_true", help="Mostrar JSON crudo")
-    parser.add_argument("--nosupa", action="store_true", help="No guardar en Supabase")
-    parser.add_argument("--loop",   type=int, default=0,
+    parser = argparse.ArgumentParser(description="EMA Saladillo → Cloudflare D1")
+    parser.add_argument("--csv",  action="store_true", help="Exportar CSV local")
+    parser.add_argument("--json", action="store_true", help="Mostrar JSON crudo")
+    parser.add_argument("--nod1", action="store_true", help="No guardar en D1")
+    parser.add_argument("--loop", type=int, default=0,
                         help="Repetir cada N segundos (ej: --loop 3600)")
     args = parser.parse_args()
 
@@ -230,14 +202,14 @@ def main():
                 print(json.dumps(mediciones, indent=2, ensure_ascii=False))
                 return
 
-            resultado_supa = None
-            if not args.nosupa:
+            resultado_d1 = None
+            if not args.nod1:
                 try:
-                    resultado_supa = guardar_en_supabase(mediciones)
+                    resultado_d1 = guardar_en_d1_desde_snih(mediciones)
                 except Exception as e:
-                    print(f"  ⚠  Supabase: {e}")
+                    print(f"  ⚠  D1: {e}")
 
-            mostrar_consola(mediciones, resultado_supa)
+            mostrar_consola(mediciones, resultado_d1)
 
             if args.csv:
                 exportar_csv(mediciones)

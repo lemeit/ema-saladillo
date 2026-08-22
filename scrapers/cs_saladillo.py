@@ -20,9 +20,9 @@ Parámetros disponibles:
   avgS   Radiación solar           [W/m²]
 
 Uso:
-    python cs_saladillo.py              # consulta + guarda en Supabase
+    python cs_saladillo.py              # consulta + guarda en D1
     python cs_saladillo.py --csv        # también exporta CSV
-    python cs_saladillo.py --nosupa     # solo consola
+    python cs_saladillo.py --nod1       # solo consola
     python cs_saladillo.py --loop 3600  # repite cada 1 hora
 
 Dependencias:
@@ -42,29 +42,20 @@ import warnings
 from datetime import datetime, timezone, timedelta
 from urllib3.exceptions import InsecureRequestWarning
 
+from d1_writer import guardar_en_d1
+
 warnings.filterwarnings("ignore", category=InsecureRequestWarning)
 
 # ─── Configuración ─────────────────────────────────────────────────────────────
-URL_JSON  = "https://climasaladillo.com/template/homepage/blocks/stationData/stationDataAjax.php?period=today"
-ESTACION  = "ClimaSaladillo"
-TIMEOUT   = 15
+URL_JSON    = "https://climasaladillo.com/template/homepage/blocks/stationData/stationDataAjax.php?period=today"
+ESTACION    = "ClimaSaladillo"
+ESTACION_D1 = "EMA-CS"
+TIMEOUT     = 15
 
 HEADERS = {
     "User-Agent":  "Mozilla/5.0 (compatible; EEST-Saladillo-script/1.0)",
     "Referer":     "https://climasaladillo.com/template/indexDesktop.php",
     "Accept":      "application/json, text/javascript, */*",
-}
-
-# ─── Supabase ──────────────────────────────────────────────────────────────────
-SUPA_URL   = os.environ.get("SUPA_URL", "")
-SUPA_KEY   = os.environ.get("SUPA_KEY", "")
-SUPA_TABLA = "mediciones_cs"
-
-HEADERS_SUPA = {
-    "apikey":        SUPA_KEY,
-    "Authorization": f"Bearer {SUPA_KEY}",
-    "Content-Type":  "application/json",
-    "Prefer":        "resolution=ignore-duplicates",
 }
 
 TZ_AR = timezone(timedelta(hours=-3))
@@ -127,23 +118,14 @@ def obtener_datos():
     return resultados, data
 
 
-# ─── Supabase ──────────────────────────────────────────────────────────────────
-def guardar_en_supabase(datos):
-    if not datos:
-        return 0
-    url  = f"{SUPA_URL}/rest/v1/{SUPA_TABLA}"
-    resp = requests.post(url, headers=HEADERS_SUPA,
-                         data=json.dumps(datos), timeout=15)
-    if resp.status_code in (200, 201):
-        return len(datos)
-    elif resp.status_code == 409:
-        return 0
-    else:
-        raise RuntimeError(f"Supabase HTTP {resp.status_code}: {resp.text[:200]}")
+# ─── D1 (Cloudflare) ────────────────────────────────────────────────────────────
+def guardar_en_d1_desde_cs(datos):
+    """Inserta los datos en la tabla unificada `mediciones` (estación EMA-CS)."""
+    return guardar_en_d1(ESTACION_D1, datos)
 
 
 # ─── Consola ───────────────────────────────────────────────────────────────────
-def mostrar_consola(datos, insertados=None):
+def mostrar_consola(datos, enviados=None):
     ahora = ahora_ar()
     print()
     print("╔══════════════════════════════════════════════════════╗")
@@ -155,11 +137,8 @@ def mostrar_consola(datos, insertados=None):
         val = f"{d['valor']:.1f} {d['unidad']}"
         print(f"║  {d['parametro']:<28} {val:<14}  {d['fecha_hora_ar']}  ║")
     print("╠══════════════════════════════════════════════════════╣")
-    if insertados is not None:
-        if insertados > 0:
-            print(f"║  Supabase: {insertados} filas insertadas ✔                      ║")
-        else:
-            print(f"║  Supabase: sin cambios (datos ya existían)               ║")
+    if enviados is not None:
+        print(f"║  D1: {enviados} filas enviadas ✔                              ║")
     print("╚══════════════════════════════════════════════════════╝")
     print()
 
@@ -176,11 +155,11 @@ def exportar_csv(datos, archivo="cs_actuales.csv"):
 
 # ─── Main ──────────────────────────────────────────────────────────────────────
 def main():
-    parser = argparse.ArgumentParser(description="Clima Saladillo → Supabase")
-    parser.add_argument("--csv",    action="store_true", help="Exportar CSV")
-    parser.add_argument("--json",   action="store_true", help="Mostrar JSON crudo")
-    parser.add_argument("--nosupa", action="store_true", help="No guardar en Supabase")
-    parser.add_argument("--loop",   type=int, default=0,
+    parser = argparse.ArgumentParser(description="Clima Saladillo → Cloudflare D1")
+    parser.add_argument("--csv",  action="store_true", help="Exportar CSV")
+    parser.add_argument("--json", action="store_true", help="Mostrar JSON crudo")
+    parser.add_argument("--nod1", action="store_true", help="No guardar en D1")
+    parser.add_argument("--loop", type=int, default=0,
                         help="Repetir cada N segundos (ej: --loop 3600)")
     args = parser.parse_args()
 
@@ -192,14 +171,14 @@ def main():
                 print(json.dumps(raw, indent=2, ensure_ascii=False))
                 return
 
-            insertados = None
-            if not args.nosupa:
+            enviados = None
+            if not args.nod1:
                 try:
-                    insertados = guardar_en_supabase(datos)
+                    enviados = guardar_en_d1_desde_cs(datos)
                 except Exception as e:
-                    print(f"  ⚠  Supabase: {e}")
+                    print(f"  ⚠  D1: {e}")
 
-            mostrar_consola(datos, insertados)
+            mostrar_consola(datos, enviados)
 
             if args.csv:
                 exportar_csv(datos)
@@ -221,7 +200,4 @@ def main():
 
 
 if __name__ == "__main__":
-    if not SUPA_URL or not SUPA_KEY:
-        print("  ⚠  Variables SUPA_URL / SUPA_KEY no definidas — sin Supabase")
-
     main()

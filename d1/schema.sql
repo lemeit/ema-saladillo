@@ -17,6 +17,10 @@ CREATE INDEX IF NOT EXISTS idx_mediciones_estacion_fecha ON mediciones (estacion
 CREATE INDEX IF NOT EXISTS idx_mediciones_fecha ON mediciones (fecha_hora_utc);
 CREATE INDEX IF NOT EXISTS idx_mediciones_parametro ON mediciones (estacion, parametro, fecha_hora_utc);
 
+-- Único: evita filas duplicadas cuando los scrapers reintentan o se
+-- superponen (cron + corrida manual). Ver tools/d1_writer.py (INSERT OR IGNORE).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mediciones_dedup ON mediciones (estacion, parametro, fecha_hora_utc);
+
 -- Última lectura de cada parámetro por estación (para el panel de "estado actual")
 CREATE VIEW IF NOT EXISTS v_ultima_lectura AS
 SELECT m.*
