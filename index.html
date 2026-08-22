@@ -583,6 +583,15 @@ canvas{width:100% !important}
         </ul>
       </div>
       <div class="about-card">
+        <h3>🌐 Red de monitoreo ambiental</h3>
+        <p>EMA Saladillo es uno de tres proyectos de monitoreo que comparten la misma infraestructura en Cloudflare, pensados para integrarse a futuro:</p>
+        <ul>
+          <li><strong style="color:var(--text)">Meteorología</strong> — este portal, <a href="https://emas.lemeit.ar" target="_blank">emas.lemeit.ar</a></li>
+          <li><strong style="color:var(--text)">Calidad del aire</strong> — sensores PurpleAir en escuelas, <a href="https://aq.lemeit.ar" target="_blank">aq.lemeit.ar</a></li>
+          <li><strong style="color:var(--text)">Calidad del agua</strong> — protocolos municipales, <a href="https://wq.lemeit.ar" target="_blank">wq.lemeit.ar</a> (en desarrollo)</li>
+        </ul>
+      </div>
+      <div class="about-card">
         <h3>📍 Estaciones de la red</h3>
         <div class="about-est-row">
           <div class="about-dot" style="background:#58a6ff"></div>
@@ -618,9 +627,10 @@ canvas{width:100% !important}
         <ul>
           <li><strong style="color:var(--text)">Scrapers:</strong> Python 3.11 — requests, BeautifulSoup, pytesseract</li>
           <li><strong style="color:var(--text)">Scheduler:</strong> GitHub Actions — cron horario</li>
-          <li><strong style="color:var(--text)">Base de datos:</strong> Supabase (PostgreSQL) — 4 tablas + vistas armonizadas</li>
+          <li><strong style="color:var(--text)">Base de datos:</strong> Cloudflare D1 (SQLite) — tabla unificada <code>mediciones</code> para las 4 estaciones</li>
+          <li><strong style="color:var(--text)">API:</strong> Cloudflare Worker (<code>ema-saladillo-api</code>) — expone D1 con el mismo formato de consulta que usaba este dashboard antes</li>
           <li><strong style="color:var(--text)">Dashboard:</strong> HTML/CSS/JS vanilla — single file</li>
-          <li><strong style="color:var(--text)">Hosting:</strong> GitHub Pages (gratuito)</li>
+          <li><strong style="color:var(--text)">Hosting:</strong> Cloudflare Pages — <a href="https://emas.lemeit.ar" target="_blank">emas.lemeit.ar</a></li>
           <li><strong style="color:var(--text)">Repositorio:</strong> <a href="https://github.com/lemeit/ema-saladillo" target="_blank">github.com/lemeit/ema-saladillo</a></li>
         </ul>
       </div>
@@ -632,7 +642,7 @@ canvas{width:100% !important}
       <p style="margin-top:6px;color:var(--muted);font-size:11px">Los datos son operativos en tiempo útil y no han sido validados formalmente por los organismos responsables. Las diferencias entre estaciones pueden reflejar tanto variabilidad microclimática real como offsets de calibración de los sensores.</p>
     </div>
     <div style="text-align:center;font-family:var(--mono);font-size:10px;color:var(--muted);padding:10px 0;border-top:1px solid var(--border)">
-      v5.1 — 2026-03-24 · Desarrollado con Claude (Anthropic) · Saladillo, Buenos Aires
+      v6.0 — 2026-08-22 · migración de Supabase a Cloudflare D1 · Desarrollado con Claude (Anthropic) · Saladillo, Buenos Aires
     </div>
   </div>
 
