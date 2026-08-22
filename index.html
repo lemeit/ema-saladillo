@@ -5,21 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>EMA Saladillo — Red Meteorológica</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://design.lemeit.ar/lemeit-theme.css">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root{
-  --bg:#0d1117;--surf:#161b22;--surf2:#1c2330;--border:#30363d;
-  --accent:#58a6ff;--green:#3fb950;--yellow:#d29922;--red:#f85149;--orange:#f0a500;
-  --text:#e6edf3;--muted:#8b949e;--shadow:rgba(0,0,0,.4);
-  --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;
+  /* paleta lemeit.ar (design.lemeit.ar) — modo oscuro */
+  --bg:#1A1612;--surf:#221E18;--surf2:#2B241D;--border:#3D3028;
+  --accent:#D9691F;--green:#8FB56B;--yellow:#D9A441;--red:#D9736F;--orange:#D9A441;
+  --text:#F2ECE4;--muted:#C9BEB2;--shadow:rgba(0,0,0,.4);
+  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif;
   --header-h:56px;--nav-h:40px;--bar-h:40px;
 }
 [data-theme="light"]{
-  --bg:#f6f8fa;--surf:#fff;--surf2:#f0f2f5;--border:#d0d7de;
-  --accent:#0969da;--green:#1a7f37;--yellow:#9a6700;--red:#cf222e;
-  --text:#1f2328;--muted:#57606a;--shadow:rgba(0,0,0,.1);
+  /* paleta lemeit.ar (design.lemeit.ar) — modo claro */
+  --bg:#FAF7F2;--surf:#fff;--surf2:#F0EBE2;--border:#E0D9CC;
+  --accent:#9B3D00;--green:#4C7A3D;--yellow:#A6720A;--red:#A33131;--orange:#A6720A;
+  --text:#2A211A;--muted:#6B5C4E;--shadow:rgba(43,30,20,.08);
 }
 
 html,body{height:100%}
@@ -284,6 +288,10 @@ canvas{width:100% !important}
       <div class="dot" id="dot"></div>
       <span id="status-txt" style="display:none"></span>
     </div>
+    <div class="lm-switcher" id="lm-switcher">
+      <button class="lm-switcher-btn">Portales ⌄</button>
+      <div class="lm-switcher-menu"></div>
+    </div>
     <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar modo">🌙</button>
   </div>
 </div>
@@ -445,7 +453,7 @@ canvas{width:100% !important}
     <!-- EET N°1 -->
     <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-bottom:28px;background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden">
       <div style="background:var(--surf2);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:12px">
-        <div style="width:52px;height:52px;border-radius:50%;background:#58a6ff22;border:2px solid #58a6ff;display:flex;align-items:center;justify-content:center;font-size:22px">🏫</div>
+        <div style="width:52px;height:52px;border-radius:50%;background:#D9691F22;border:2px solid #D9691F;display:flex;align-items:center;justify-content:center;font-size:22px">🏫</div>
         <div style="font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:700;text-align:center">EET N°1</div>
         <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center">Est. 4094 · Red RMET</div>
         <div style="width:100%;height:1px;background:var(--border)"></div>
@@ -473,8 +481,8 @@ canvas{width:100% !important}
     <!-- CFR -->
     <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-bottom:28px;background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden">
       <div style="background:var(--surf2);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:12px">
-        <div style="width:52px;height:52px;border-radius:50%;background:#3fb95022;border:2px solid #3fb950;display:flex;align-items:center;justify-content:center;font-size:22px">🌾</div>
-        <div style="font-family:var(--mono);font-size:11px;color:#3fb950;font-weight:700;text-align:center">CFR</div>
+        <div style="width:52px;height:52px;border-radius:50%;background:#8FB56B22;border:2px solid #8FB56B;display:flex;align-items:center;justify-content:center;font-size:22px">🌾</div>
+        <div style="font-family:var(--mono);font-size:11px;color:#8FB56B;font-weight:700;text-align:center">CFR</div>
         <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center">Davis Instruments</div>
         <div style="width:100%;height:1px;background:var(--border)"></div>
         <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center;line-height:1.7">
@@ -501,8 +509,8 @@ canvas{width:100% !important}
     <!-- DC -->
     <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-bottom:28px;background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden">
       <div style="background:var(--surf2);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:12px">
-        <div style="width:52px;height:52px;border-radius:50%;background:#f8514922;border:2px solid #f85149;display:flex;align-items:center;justify-content:center;font-size:22px">✈️</div>
-        <div style="font-family:var(--mono);font-size:11px;color:#f85149;font-weight:700;text-align:center">DC</div>
+        <div style="width:52px;height:52px;border-radius:50%;background:#D9736F22;border:2px solid #D9736F;display:flex;align-items:center;justify-content:center;font-size:22px">✈️</div>
+        <div style="font-family:var(--mono);font-size:11px;color:#D9736F;font-weight:700;text-align:center">DC</div>
         <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center">Davis / Meteobridge</div>
         <div style="width:100%;height:1px;background:var(--border)"></div>
         <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center;line-height:1.7">
@@ -529,8 +537,8 @@ canvas{width:100% !important}
     <!-- CS -->
     <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-bottom:28px;background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden">
       <div style="background:var(--surf2);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:12px">
-        <div style="width:52px;height:52px;border-radius:50%;background:#f0a50022;border:2px solid #f0a500;display:flex;align-items:center;justify-content:center;font-size:22px">🏘️</div>
-        <div style="font-family:var(--mono);font-size:11px;color:#f0a500;font-weight:700;text-align:center">CS</div>
+        <div style="width:52px;height:52px;border-radius:50%;background:#D9A44122;border:2px solid #D9A441;display:flex;align-items:center;justify-content:center;font-size:22px">🏘️</div>
+        <div style="font-family:var(--mono);font-size:11px;color:#D9A441;font-weight:700;text-align:center">CS</div>
         <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center">Davis / Meteotemplate</div>
         <div style="width:100%;height:1px;background:var(--border)"></div>
         <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center;line-height:1.7">
@@ -594,28 +602,28 @@ canvas{width:100% !important}
       <div class="about-card">
         <h3>📍 Estaciones de la red</h3>
         <div class="about-est-row">
-          <div class="about-dot" style="background:#58a6ff"></div>
+          <div class="about-dot" style="background:#D9691F"></div>
           <div class="about-est-info">
             <div class="about-est-name">EMA-EET — EEST N°1 "Gral. Savio"</div>
             <div class="about-est-sub">Tecmes RMET · API SNIH/INA · -35.64533, -59.78482</div>
           </div>
         </div>
         <div class="about-est-row">
-          <div class="about-dot" style="background:#3fb950"></div>
+          <div class="about-dot" style="background:#8FB56B"></div>
           <div class="about-est-info">
             <div class="about-est-name">EMA-CFR — Centro de Formación Rural</div>
             <div class="about-est-sub">Davis Instruments · HTML scraping · -35.62236, -59.78359</div>
           </div>
         </div>
         <div class="about-est-row">
-          <div class="about-dot" style="background:#f85149"></div>
+          <div class="about-dot" style="background:#D9736F"></div>
           <div class="about-est-info">
             <div class="about-est-name">EMA-DC — Defensa Civil · Aeródromo</div>
             <div class="about-est-sub">Davis / Meteobridge · OCR · -35.60063, -59.81350</div>
           </div>
         </div>
         <div class="about-est-row">
-          <div class="about-dot" style="background:#f0a500"></div>
+          <div class="about-dot" style="background:#D9A441"></div>
           <div class="about-est-info">
             <div class="about-est-name">EMA-CS — Clima Saladillo · B° Falucho</div>
             <div class="about-est-sub">Davis / Meteotemplate · JSON · -35.64500, -59.77580</div>
@@ -678,6 +686,7 @@ canvas{width:100% !important}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://design.lemeit.ar/lemeit-common.js"></script>
 <script>
 
 /* ═══════════════════════════════════════════
@@ -947,7 +956,7 @@ const COMP_MAP = {
   "Sensación térmica": { eet:null,cfr:null,                   dc:null,               cs:"Sensacion Termica", ico:"🌡️", uni:"°C",   dec:1 },
 };
 
-const EST_COLORES = { eet:"#58a6ff", cfr:"#3fb950", dc:"#f85149", cs:"#f0a500" };
+const EST_COLORES = { eet:"#D9691F", cfr:"#8FB56B", dc:"#D9736F", cs:"#D9A441" };
 const EST_NOMBRES = { eet:"EMA-EET", cfr:"EMA-CFR", dc:"EMA-DC", cs:"EMA-CS" };
 
 async function cargarComparativa() {
@@ -1145,13 +1154,13 @@ async function cargarGrafico() {
     const rows   = (await supaFetch(est.tabla, q)).reverse();
     const labels = rows.map(r => (r.fecha_hora_ar||"").slice(0,16));
     const data   = rows.map(r => parseFloat(r.valor));
-    const tc     = dark ? "#8b949e" : "#57606a";
+    const tc     = dark ? "#C9BEB2" : "#6B5C4E";
     const gc     = dark ? "rgba(48,54,61,0.5)" : "rgba(208,215,222,0.5)";
-    const ac     = dark ? "#58a6ff" : "#0969da";
+    const ac     = dark ? "#D9691F" : "#9B3D00";
     const bg     = dark ? "rgba(88,166,255,0.07)" : "rgba(9,105,218,0.07)";
 
     // Color según estación
-    const colores = { eet:"#58a6ff", cfr:"#3fb950", dc:"#f85149", cs:"#f0a500" };
+    const colores = { eet:"#D9691F", cfr:"#8FB56B", dc:"#D9736F", cs:"#D9A441" };
     const estColor = colores[estActual] || ac;
     const estBg    = estColor + "12";
     const estNombre = EST_NOMBRES[estActual] || est.nombre;
@@ -1174,16 +1183,16 @@ async function cargarGrafico() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { labels:{ color:tc, font:{family:"Space Mono",size:11}, boxWidth:12 } },
-          tooltip: { backgroundColor:dark?"#161b22":"#fff", borderColor:dark?"#30363d":"#d0d7de",
+          legend: { labels:{ color:tc, font:{family:"JetBrains Mono",size:11}, boxWidth:12 } },
+          tooltip: { backgroundColor:dark?"#221E18":"#fff", borderColor:dark?"#3D3028":"#E0D9CC",
             borderWidth:1, titleColor:tc, bodyColor:tc,
-            titleFont:{family:"Space Mono",size:10}, bodyFont:{family:"Space Mono",size:12},
+            titleFont:{family:"JetBrains Mono",size:10}, bodyFont:{family:"JetBrains Mono",size:12},
             callbacks: { label: ctx => `${ctx.parsed.y.toFixed(2)} ${unidad}` }
           }
         },
         scales: {
-          x: { ticks:{color:tc,font:{family:"Space Mono",size:9},maxTicksLimit:12,maxRotation:45}, grid:{color:gc} },
-          y: { ticks:{color:tc,font:{family:"Space Mono",size:10},
+          x: { ticks:{color:tc,font:{family:"JetBrains Mono",size:9},maxTicksLimit:12,maxRotation:45}, grid:{color:gc} },
+          y: { ticks:{color:tc,font:{family:"JetBrains Mono",size:10},
                 callback: v => `${v} ${unidad}`}, grid:{color:gc} }
         }
       }
@@ -1198,18 +1207,18 @@ let chartRosa=null, chartVelRosa=null, chartViento=null;
 
 function rosaOpts() {
   const dark = document.documentElement.getAttribute("data-theme") !== "light";
-  const tc   = dark ? "#8b949e" : "#57606a";
+  const tc   = dark ? "#C9BEB2" : "#6B5C4E";
   const gc   = dark ? "rgba(48,54,61,0.7)" : "rgba(208,215,222,0.7)";
   return {
     responsive:true,
     plugins:{ legend:{display:false},
-      tooltip:{ backgroundColor:dark?"#161b22":"#fff", borderColor:dark?"#30363d":"#d0d7de",
-        borderWidth:1, titleColor:tc, bodyColor:dark?"#58a6ff":"#0969da",
-        titleFont:{family:"Space Mono",size:10}, bodyFont:{family:"Space Mono",size:11} }
+      tooltip:{ backgroundColor:dark?"#221E18":"#fff", borderColor:dark?"#3D3028":"#E0D9CC",
+        borderWidth:1, titleColor:tc, bodyColor:dark?"#D9691F":"#9B3D00",
+        titleFont:{family:"JetBrains Mono",size:10}, bodyFont:{family:"JetBrains Mono",size:11} }
     },
     scales:{ r:{ beginAtZero:true,
-      ticks:{color:tc,font:{family:"Space Mono",size:9},backdropColor:"transparent"},
-      grid:{color:gc}, pointLabels:{color:dark?"#e6edf3":"#1f2328",font:{family:"Space Mono",size:10}},
+      ticks:{color:tc,font:{family:"JetBrains Mono",size:9},backdropColor:"transparent"},
+      grid:{color:gc}, pointLabels:{color:dark?"#F2ECE4":"#2A211A",font:{family:"JetBrains Mono",size:10}},
       angleLines:{color:gc}
     }}
   };
@@ -1220,7 +1229,7 @@ async function cargarRosa() {
   const est   = ESTACIONES[estActual];
   const limit = document.getElementById("sel-limit-rosa").value;
   const dark  = document.documentElement.getAttribute("data-theme") !== "light";
-  const ac    = dark ? "#58a6ff" : "#0969da";
+  const ac    = dark ? "#D9691F" : "#9B3D00";
 
   try {
     let qDir, qVel;
@@ -1272,7 +1281,7 @@ async function cargarVientoTemporal() {
   const est   = ESTACIONES[estActual];
   const limit = document.getElementById("sel-limit-viento").value;
   const dark  = document.documentElement.getAttribute("data-theme") !== "light";
-  const tc    = dark ? "#8b949e" : "#57606a";
+  const tc    = dark ? "#C9BEB2" : "#6B5C4E";
   const tsKey = est.campoParam==="codigo" ? "fecha_hora_utc" : "insertado_en";
 
   try {
@@ -1300,16 +1309,16 @@ async function cargarVientoTemporal() {
         borderWidth:0 }]},
       options:{
         responsive:true,
-        plugins:{ legend:{labels:{color:tc,font:{family:"Space Mono",size:11}}},
-          tooltip:{ backgroundColor:dark?"#161b22":"#fff", borderColor:dark?"#30363d":"#d0d7de",
-            borderWidth:1, titleColor:tc, bodyColor:dark?"#e6edf3":"#1f2328",
+        plugins:{ legend:{labels:{color:tc,font:{family:"JetBrains Mono",size:11}}},
+          tooltip:{ backgroundColor:dark?"#221E18":"#fff", borderColor:dark?"#3D3028":"#E0D9CC",
+            borderWidth:1, titleColor:tc, bodyColor:dark?"#F2ECE4":"#2A211A",
             callbacks:{ afterLabel:(ctx)=>{
               const d=rowsDir[ctx.dataIndex];
               return d?`Dir: ${gradosARosa(parseFloat(d.valor))} (${parseFloat(d.valor).toFixed(0)}°)`:"";
             }}}},
         scales:{
-          x:{ticks:{color:tc,font:{family:"Space Mono",size:9},maxTicksLimit:12,maxRotation:45},grid:{color:gc}},
-          y:{ticks:{color:tc,font:{family:"Space Mono",size:10}},grid:{color:gc},beginAtZero:true}
+          x:{ticks:{color:tc,font:{family:"JetBrains Mono",size:9},maxTicksLimit:12,maxRotation:45},grid:{color:gc}},
+          y:{ticks:{color:tc,font:{family:"JetBrains Mono",size:10}},grid:{color:gc},beginAtZero:true}
         }
       }
     });
@@ -1330,7 +1339,7 @@ async function cargarGraficoComparativo() {
   const param  = document.getElementById("sel-param-chart").value;
   const limit  = parseInt(document.getElementById("sel-limit-chart").value);
   const dark   = document.documentElement.getAttribute("data-theme") !== "light";
-  const tc     = dark ? "#8b949e" : "#57606a";
+  const tc     = dark ? "#C9BEB2" : "#6B5C4E";
   const gc     = dark ? "rgba(48,54,61,0.5)" : "rgba(208,215,222,0.5)";
 
   document.getElementById("chart").style.display = "none";
@@ -1426,16 +1435,16 @@ async function cargarGraficoComparativo() {
         labels,
         datasets: [
           { label:EST_NOMBRES.eet, data:dEet,
-            borderColor:"#58a6ff", backgroundColor:"rgba(88,166,255,0.06)",
+            borderColor:"#D9691F", backgroundColor:"rgba(217,105,31,0.06)",
             borderWidth:1.5, pointRadius:0, tension:0.3, fill:true, spanGaps:false },
           { label:EST_NOMBRES.cfr, data:dCfr,
-            borderColor:"#3fb950", backgroundColor:"rgba(63,185,80,0.06)",
+            borderColor:"#8FB56B", backgroundColor:"rgba(143,181,107,0.06)",
             borderWidth:1.5, pointRadius:0, tension:0.3, fill:true, spanGaps:false },
           { label:EST_NOMBRES.dc,  data:dDc,
-            borderColor:"#f85149", backgroundColor:"rgba(248,81,73,0.06)",
+            borderColor:"#D9736F", backgroundColor:"rgba(217,115,111,0.06)",
             borderWidth:1.5, pointRadius:0, tension:0.3, fill:true, spanGaps:false },
           { label:EST_NOMBRES.cs,  data:dCs,
-            borderColor:"#f0a500", backgroundColor:"rgba(240,165,0,0.06)",
+            borderColor:"#D9A441", backgroundColor:"rgba(217,164,65,0.06)",
             borderWidth:1.5, pointRadius:0, tension:0.3, fill:true, spanGaps:false },
         ]
       },
@@ -1443,16 +1452,16 @@ async function cargarGraficoComparativo() {
         responsive:true,
         maintainAspectRatio:false,
         plugins:{
-          legend:{labels:{color:tc,font:{family:"Space Mono",size:11},boxWidth:12}},
-          tooltip:{ backgroundColor:dark?"#161b22":"#fff", borderColor:dark?"#30363d":"#d0d7de",
+          legend:{labels:{color:tc,font:{family:"JetBrains Mono",size:11},boxWidth:12}},
+          tooltip:{ backgroundColor:dark?"#221E18":"#fff", borderColor:dark?"#3D3028":"#E0D9CC",
             borderWidth:1, titleColor:tc,
-            titleFont:{family:"Space Mono",size:10}, bodyFont:{family:"Space Mono",size:12},
+            titleFont:{family:"JetBrains Mono",size:10}, bodyFont:{family:"JetBrains Mono",size:12},
             callbacks:{ label: ctx => ctx.parsed.y !== null ? `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(mapParam.dec)} ${mapParam.uni}` : null }
           }
         },
         scales:{
-          x:{ticks:{color:tc,font:{family:"Space Mono",size:9},maxTicksLimit:12,maxRotation:45},grid:{color:gc}},
-          y:{ticks:{color:tc,font:{family:"Space Mono",size:10},callback:v=>`${v} ${mapParam.uni}`},grid:{color:gc}}
+          x:{ticks:{color:tc,font:{family:"JetBrains Mono",size:9},maxTicksLimit:12,maxRotation:45},grid:{color:gc}},
+          y:{ticks:{color:tc,font:{family:"JetBrains Mono",size:10},callback:v=>`${v} ${mapParam.uni}`},grid:{color:gc}}
         }
       }
     });
@@ -1481,13 +1490,13 @@ async function cargarMapa() {
 
   const estaciones_geo = [
     { id:"eet", nombre:"EMA-EET", lat:-35.64533, lon:-59.78482,
-      tabla:"mediciones_ema", campo:"codigo", pid:14, color:"#58a6ff" },
+      tabla:"mediciones_ema", campo:"codigo", pid:14, color:"#D9691F" },
     { id:"cfr", nombre:"EMA-CFR",        lat:-35.62236, lon:-59.78359,
-      tabla:"mediciones_cfr", campo:"parametro", pid:"Temperatura", color:"#3fb950" },
+      tabla:"mediciones_cfr", campo:"parametro", pid:"Temperatura", color:"#8FB56B" },
     { id:"dc",  nombre:"EMA-DC",        lat:-35.60063, lon:-59.81350,
-      tabla:"mediciones_dc",  campo:"parametro", pid:"Temperatura", color:"#f85149" },
+      tabla:"mediciones_dc",  campo:"parametro", pid:"Temperatura", color:"#D9736F" },
     { id:"cs",  nombre:"EMA-CS", lat:-35.64500, lon:-59.77580,
-      tabla:"mediciones_cs",  campo:"parametro", pid:"Temperatura", color:"#f0a500" },
+      tabla:"mediciones_cs",  campo:"parametro", pid:"Temperatura", color:"#D9A441" },
   ];
 
   const mapaCards = document.getElementById("mapa-cards");
@@ -1564,22 +1573,22 @@ const ESP_VARS = {
 
 const ESP_FUENTES = {
   temp: [
-    { tabla:"mediciones_ema",  campo:"codigo",    pid:14,            nombre:"EMA-EET", lat:-35.64533, lon:-59.78482, color:"#58a6ff" },
-    { tabla:"mediciones_cfr",  campo:"parametro", pid:"Temperatura", nombre:"EMA-CFR", lat:-35.62236, lon:-59.78359, color:"#3fb950" },
-    { tabla:"mediciones_dc",   campo:"parametro", pid:"Temperatura", nombre:"EMA-DC",  lat:-35.60063, lon:-59.81350, color:"#f85149" },
-    { tabla:"mediciones_cs",   campo:"parametro", pid:"Temperatura", nombre:"EMA-CS",  lat:-35.64500, lon:-59.77580, color:"#f0a500" },
+    { tabla:"mediciones_ema",  campo:"codigo",    pid:14,            nombre:"EMA-EET", lat:-35.64533, lon:-59.78482, color:"#D9691F" },
+    { tabla:"mediciones_cfr",  campo:"parametro", pid:"Temperatura", nombre:"EMA-CFR", lat:-35.62236, lon:-59.78359, color:"#8FB56B" },
+    { tabla:"mediciones_dc",   campo:"parametro", pid:"Temperatura", nombre:"EMA-DC",  lat:-35.60063, lon:-59.81350, color:"#D9736F" },
+    { tabla:"mediciones_cs",   campo:"parametro", pid:"Temperatura", nombre:"EMA-CS",  lat:-35.64500, lon:-59.77580, color:"#D9A441" },
   ],
   hum: [
-    { tabla:"mediciones_ema",  campo:"codigo",    pid:18,            nombre:"EMA-EET", lat:-35.64533, lon:-59.78482, color:"#58a6ff" },
-    { tabla:"mediciones_cfr",  campo:"parametro", pid:"Humedad",     nombre:"EMA-CFR", lat:-35.62236, lon:-59.78359, color:"#3fb950" },
-    { tabla:"mediciones_dc",   campo:"parametro", pid:"Humedad",     nombre:"EMA-DC",  lat:-35.60063, lon:-59.81350, color:"#f85149" },
-    { tabla:"mediciones_cs",   campo:"parametro", pid:"Humedad",     nombre:"EMA-CS",  lat:-35.64500, lon:-59.77580, color:"#f0a500" },
+    { tabla:"mediciones_ema",  campo:"codigo",    pid:18,            nombre:"EMA-EET", lat:-35.64533, lon:-59.78482, color:"#D9691F" },
+    { tabla:"mediciones_cfr",  campo:"parametro", pid:"Humedad",     nombre:"EMA-CFR", lat:-35.62236, lon:-59.78359, color:"#8FB56B" },
+    { tabla:"mediciones_dc",   campo:"parametro", pid:"Humedad",     nombre:"EMA-DC",  lat:-35.60063, lon:-59.81350, color:"#D9736F" },
+    { tabla:"mediciones_cs",   campo:"parametro", pid:"Humedad",     nombre:"EMA-CS",  lat:-35.64500, lon:-59.77580, color:"#D9A441" },
   ],
   pres: [
-    { tabla:"mediciones_ema",  campo:"codigo",    pid:218,              nombre:"EMA-EET", lat:-35.64533, lon:-59.78482, color:"#58a6ff" },
-    { tabla:"mediciones_cfr",  campo:"parametro", pid:"Presion Barometrica", nombre:"CFR", lat:-35.62236, lon:-59.78359, color:"#3fb950" },
-    { tabla:"mediciones_dc",   campo:"parametro", pid:"Presion",         nombre:"DC",       lat:-35.60063, lon:-59.81350, color:"#f85149" },
-    { tabla:"mediciones_cs",   campo:"parametro", pid:"Presion",         nombre:"EMA-CS",  lat:-35.64500, lon:-59.77580, color:"#f0a500" },
+    { tabla:"mediciones_ema",  campo:"codigo",    pid:218,              nombre:"EMA-EET", lat:-35.64533, lon:-59.78482, color:"#D9691F" },
+    { tabla:"mediciones_cfr",  campo:"parametro", pid:"Presion Barometrica", nombre:"CFR", lat:-35.62236, lon:-59.78359, color:"#8FB56B" },
+    { tabla:"mediciones_dc",   campo:"parametro", pid:"Presion",         nombre:"DC",       lat:-35.60063, lon:-59.81350, color:"#D9736F" },
+    { tabla:"mediciones_cs",   campo:"parametro", pid:"Presion",         nombre:"EMA-CS",  lat:-35.64500, lon:-59.77580, color:"#D9A441" },
   ],
 };
 
@@ -1872,6 +1881,7 @@ document.getElementById("version-footer-actuales").textContent = APP_VERSION;
 document.getElementById("version-footer-acerca").textContent = APP_VERSION_DETALLE;
 
 /* ── INIT ── */
+if (window.LemeitCommon) LemeitCommon.initSwitcher("emas");
 cargarActuales();
 setInterval(()=>{
   if(document.getElementById("tab-actuales").classList.contains("active")) cargarActuales();
