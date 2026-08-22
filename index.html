@@ -1132,12 +1132,16 @@ async function cargarGrafico() {
 
   try {
     const q = est.campoParam === "codigo"
-      ? `select=fecha_hora_ar,valor&codigo=eq.${pid}&order=fecha_hora_utc.desc&limit=${limit}`
-      : `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(pid)}&order=insertado_en.desc&limit=${limit}`;
+      ? `select=fecha_hora_ar,valor&codigo=eq.${pid}&order=fecha_hora_utc.desc&limit=${limit}&horas=${limit}`
+      : `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(pid)}&order=insertado_en.desc&limit=${limit}&horas=${limit}`;
 
     // Se pide en orden descendente (las N más recientes) y se invierte
     // para graficar en orden cronológico. Pedir ascendente+limit devolvía
-    // siempre las N filas MÁS VIEJAS de todo el historial.
+    // siempre las N filas MÁS VIEJAS de todo el historial. "horas" acota
+    // además por fecha real: sin esto, una estación con huecos de datos
+    // puede traer "las últimas N filas que existan" aunque eso signifique
+    // remontarse meses atrás (el propio valor de "limit" ya es una cantidad
+    // de horas: 48/168/720 = 48h/7 días/30 días).
     const rows   = (await supaFetch(est.tabla, q)).reverse();
     const labels = rows.map(r => (r.fecha_hora_ar||"").slice(0,16));
     const data   = rows.map(r => parseFloat(r.valor));
@@ -1221,11 +1225,11 @@ async function cargarRosa() {
   try {
     let qDir, qVel;
     if (est.campoParam === "codigo") {
-      qDir = `select=valor,fecha_hora_utc&codigo=eq.${est.paramDirViento}&order=fecha_hora_utc.desc&limit=${limit}`;
-      qVel = `select=valor,fecha_hora_utc&codigo=eq.${est.paramVelViento}&order=fecha_hora_utc.desc&limit=${limit}`;
+      qDir = `select=valor,fecha_hora_utc&codigo=eq.${est.paramDirViento}&order=fecha_hora_utc.desc&limit=${limit}&horas=${limit}`;
+      qVel = `select=valor,fecha_hora_utc&codigo=eq.${est.paramVelViento}&order=fecha_hora_utc.desc&limit=${limit}&horas=${limit}`;
     } else {
-      qDir = `select=valor,insertado_en&parametro=eq.${encodeURIComponent(est.paramDirViento)}&order=insertado_en.desc&limit=${limit}`;
-      qVel = `select=valor,insertado_en&parametro=eq.${encodeURIComponent(est.paramVelViento)}&order=insertado_en.desc&limit=${limit}`;
+      qDir = `select=valor,insertado_en&parametro=eq.${encodeURIComponent(est.paramDirViento)}&order=insertado_en.desc&limit=${limit}&horas=${limit}`;
+      qVel = `select=valor,insertado_en&parametro=eq.${encodeURIComponent(est.paramVelViento)}&order=insertado_en.desc&limit=${limit}&horas=${limit}`;
     }
     const [rowsDir, rowsVel] = await Promise.all([
       supaFetch(est.tabla, qDir), supaFetch(est.tabla, qVel)
@@ -1274,11 +1278,11 @@ async function cargarVientoTemporal() {
   try {
     let qVel, qDir;
     if (est.campoParam==="codigo"){
-      qVel=`select=valor,fecha_hora_ar&codigo=eq.${est.paramVelViento}&order=fecha_hora_utc.desc&limit=${limit}`;
-      qDir=`select=valor,${tsKey}&codigo=eq.${est.paramDirViento}&order=fecha_hora_utc.desc&limit=${limit}`;
+      qVel=`select=valor,fecha_hora_ar&codigo=eq.${est.paramVelViento}&order=fecha_hora_utc.desc&limit=${limit}&horas=${limit}`;
+      qDir=`select=valor,${tsKey}&codigo=eq.${est.paramDirViento}&order=fecha_hora_utc.desc&limit=${limit}&horas=${limit}`;
     } else {
-      qVel=`select=valor,fecha_hora_ar&parametro=eq.${encodeURIComponent(est.paramVelViento)}&order=insertado_en.desc&limit=${limit}`;
-      qDir=`select=valor,${tsKey}&parametro=eq.${encodeURIComponent(est.paramDirViento)}&order=insertado_en.desc&limit=${limit}`;
+      qVel=`select=valor,fecha_hora_ar&parametro=eq.${encodeURIComponent(est.paramVelViento)}&order=insertado_en.desc&limit=${limit}&horas=${limit}`;
+      qDir=`select=valor,${tsKey}&parametro=eq.${encodeURIComponent(est.paramDirViento)}&order=insertado_en.desc&limit=${limit}&horas=${limit}`;
     }
     // desc+limit trae las N más recientes; se invierte para orden cronológico
     const [rowsVelRaw, rowsDirRaw] = await Promise.all([supaFetch(est.tabla,qVel), supaFetch(est.tabla,qDir)]);
@@ -1365,7 +1369,7 @@ async function cargarGraficoComparativo() {
     if (param === "Temperatura") {
       // Usar vista pivotada — una fila por hora con las 4 columnas
       const rows = await supaFetch("v_temperatura_comparativa",
-        `select=hora,eet,cfr,dc,cs&order=hora.asc&limit=${limit}`);
+        `select=hora,eet,cfr,dc,cs&order=hora.asc&limit=${limit}&horas=${limit}`);
       labels = rows.map(r => r.hora.slice(0,13));
       dEet   = rows.map(r => r.eet   !== null ? parseFloat(r.eet)   : null);
       dCfr   = rows.map(r => r.cfr   !== null ? parseFloat(r.cfr)   : null);
@@ -1376,7 +1380,7 @@ async function cargarGraficoComparativo() {
       // Usar v_ema_armonizada y pivotar en JS
       const canon = CANON[param];
       const rows  = await supaFetch("v_ema_armonizada",
-        `select=hora,estacion,valor&parametro=eq.${encodeURIComponent(canon)}&order=hora.asc&limit=${limit * 4}`);
+        `select=hora,estacion,valor&parametro=eq.${encodeURIComponent(canon)}&order=hora.asc&limit=${limit * 4}&horas=${limit}`);
 
       // Extraer horas únicas ordenadas
       const horasSet = [...new Set(rows.map(r => r.hora))].sort();
@@ -1396,10 +1400,10 @@ async function cargarGraficoComparativo() {
     } else {
       // Fallback: consulta individual (parámetros sin vista armonizada)
       const queries = [
-        mapParam.eet !== null ? supaFetch("mediciones_ema", `select=fecha_hora_ar,valor&codigo=eq.${mapParam.eet}&order=fecha_hora_utc.desc&limit=${limit}`) : Promise.resolve([]),
-        mapParam.cfr !== null ? supaFetch("mediciones_cfr", `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.cfr)}&order=insertado_en.desc&limit=${limit}`) : Promise.resolve([]),
-        mapParam.dc  !== null ? supaFetch("mediciones_dc",  `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.dc)}&order=insertado_en.desc&limit=${limit}`)  : Promise.resolve([]),
-        mapParam.cs  !== null ? supaFetch("mediciones_cs",  `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.cs)}&order=insertado_en.desc&limit=${limit}`)  : Promise.resolve([]),
+        mapParam.eet !== null ? supaFetch("mediciones_ema", `select=fecha_hora_ar,valor&codigo=eq.${mapParam.eet}&order=fecha_hora_utc.desc&limit=${limit}&horas=${limit}`) : Promise.resolve([]),
+        mapParam.cfr !== null ? supaFetch("mediciones_cfr", `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.cfr)}&order=insertado_en.desc&limit=${limit}&horas=${limit}`) : Promise.resolve([]),
+        mapParam.dc  !== null ? supaFetch("mediciones_dc",  `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.dc)}&order=insertado_en.desc&limit=${limit}&horas=${limit}`)  : Promise.resolve([]),
+        mapParam.cs  !== null ? supaFetch("mediciones_cs",  `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.cs)}&order=insertado_en.desc&limit=${limit}&horas=${limit}`)  : Promise.resolve([]),
       ];
       // desc+limit trae las N más recientes; se invierte para orden cronológico
       const [rEetRaw, rCfrRaw, rDcRaw, rCsRaw] = await Promise.all(queries);

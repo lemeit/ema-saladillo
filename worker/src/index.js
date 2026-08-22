@@ -10,9 +10,17 @@
  *
  * Rutas:
  *   GET /rest/v1/mediciones_ema | mediciones_cfr | mediciones_dc | mediciones_cs
- *       ?select=...&order=campo.asc|desc&limit=N&codigo=eq.X&parametro=eq.X
- *   GET /rest/v1/v_temperatura_comparativa?select=hora,eet,cfr,dc,cs&order=hora.asc&limit=N
- *   GET /rest/v1/v_ema_armonizada?select=hora,estacion,valor&parametro=eq.CANON&order=hora.asc&limit=N
+ *       ?select=...&order=campo.asc|desc&limit=N&codigo=eq.X&parametro=eq.X&horas=N
+ *   GET /rest/v1/v_temperatura_comparativa?select=hora,eet,cfr,dc,cs&order=hora.asc&limit=N&horas=N
+ *   GET /rest/v1/v_ema_armonizada?select=hora,estacion,valor&parametro=eq.CANON&order=hora.asc&limit=N&horas=N
+ *
+ * "horas" (opcional, en las 3 rutas): filtra por ventana de calendario real
+ * (fecha_hora_utc >= ahora - N horas) en vez de por cantidad de filas. Lo usan
+ * los selectores "48 h / 7 días / 30 días" del dashboard — sin esto, una
+ * estación con huecos de datos puede devolver "las últimas N filas que
+ * existan" aunque eso signifique remontarse meses atrás. `limit` sigue
+ * aplicando como tope de fila cuando no se manda "horas" (comportamiento
+ * legado, para no romper otros consumidores de la API).
  */
 
 const CORS_HEADERS = {
@@ -118,6 +126,16 @@ async function handleMediciones(env, tabla, params) {
     binds.push(decodeURIComponent(parametroEq.slice(3)));
   }
 
+  // "horas": ventana de calendario real (ej. últimas 720 horas = últimos 30
+  // días), en vez de "las últimas N filas que existan" — con estaciones que
+  // tienen huecos de datos, "últimas N filas" puede terminar trayendo datos
+  // de varios meses atrás en vez de del rango pedido.
+  const horas = parseInt(params.get("horas") || "", 10);
+  if (horas > 0) {
+    where += " AND fecha_hora_utc >= datetime('now', '-' || ? || ' hours')";
+    binds.push(horas);
+  }
+
   const sql = `SELECT codigo, parametro, unidad, valor, valor_texto, fecha_hora_utc
                FROM mediciones WHERE ${where} ORDER BY fecha_hora_utc ${dir} LIMIT ?`;
   binds.push(limit);
@@ -128,6 +146,10 @@ async function handleMediciones(env, tabla, params) {
 
 async function handleTemperaturaComparativa(env, params) {
   const limit = Math.min(parseInt(params.get("limit") || "500", 10) || 500, 20000);
+  // "horas": ventana de calendario real (ver handleMediciones). Cuando viene
+  // presente, filtra por fecha en vez de "las últimas N horas que existan" —
+  // así una estación con huecos de datos no termina trayendo meses de atrás.
+  const horasVentana = parseInt(params.get("horas") || "", 10);
   const stations = [
     ["EMA-EET", "eet", "codigo", 14],
     ["EMA-CFR", "cfr", "parametro", "Temperatura"],
@@ -137,20 +159,32 @@ async function handleTemperaturaComparativa(env, params) {
 
   const porEstacion = {};
   for (const [estacion, clave, columna, valor] of stations) {
-    // Traer solo las horas MÁS RECIENTES por estación (antes se agrupaba
-    // TODO el historial y luego se tomaban las primeras `limit` horas del
-    // conjunto ordenado ascendente, que siempre eran las más viejas).
-    const sql = `SELECT hora, valor FROM (
-                   SELECT strftime('%Y-%m-%d %H', fecha_hora_utc) AS hora, AVG(valor) AS valor
-                   FROM mediciones WHERE estacion = ? AND ${columna} = ?
-                   GROUP BY hora ORDER BY hora DESC LIMIT ?
-                 ) ORDER BY hora ASC`;
-    const { results } = await env.DB.prepare(sql).bind(estacion, valor, limit).all();
+    let sql, binds;
+    if (horasVentana > 0) {
+      sql = `SELECT strftime('%Y-%m-%d %H', fecha_hora_utc) AS hora, AVG(valor) AS valor
+             FROM mediciones
+             WHERE estacion = ? AND ${columna} = ?
+               AND fecha_hora_utc >= datetime('now', '-' || ? || ' hours')
+             GROUP BY hora ORDER BY hora ASC`;
+      binds = [estacion, valor, horasVentana];
+    } else {
+      // Sin "horas": traer solo las horas MÁS RECIENTES por estación (antes
+      // se agrupaba TODO el historial y se tomaban las primeras `limit`
+      // horas del conjunto ordenado ascendente, que siempre eran las más
+      // viejas — ver commit anterior).
+      sql = `SELECT hora, valor FROM (
+               SELECT strftime('%Y-%m-%d %H', fecha_hora_utc) AS hora, AVG(valor) AS valor
+               FROM mediciones WHERE estacion = ? AND ${columna} = ?
+               GROUP BY hora ORDER BY hora DESC LIMIT ?
+             ) ORDER BY hora ASC`;
+      binds = [estacion, valor, limit];
+    }
+    const { results } = await env.DB.prepare(sql).bind(...binds).all();
     porEstacion[clave] = {};
     for (const r of results) porEstacion[clave][r.hora] = r.valor;
   }
 
-  const horas = [
+  const todasHoras = [
     ...new Set([
       ...Object.keys(porEstacion.eet),
       ...Object.keys(porEstacion.cfr),
@@ -159,8 +193,10 @@ async function handleTemperaturaComparativa(env, params) {
     ]),
   ].sort();
 
-  // Nos quedamos con las `limit` horas más recientes del conjunto combinado
-  const filas = horas.slice(-limit).map((h) => ({
+  // Sin "horas" (fallback legado): nos quedamos con las `limit` horas más
+  // recientes del conjunto combinado. Con "horas", ya viene acotado por fecha.
+  const horasFinales = horasVentana > 0 ? todasHoras : todasHoras.slice(-limit);
+  const filas = horasFinales.map((h) => ({
     hora: h,
     eet: porEstacion.eet[h] ?? null,
     cfr: porEstacion.cfr[h] ?? null,
@@ -174,6 +210,8 @@ async function handleArmonizada(env, params) {
   const parametroEq = params.get("parametro");
   const canon = parametroEq && parametroEq.startsWith("eq.") ? decodeURIComponent(parametroEq.slice(3)) : null;
   const limit = Math.min(parseInt(params.get("limit") || "2000", 10) || 2000, 40000);
+  // "horas": ventana de calendario real (ver handleMediciones).
+  const horasVentana = parseInt(params.get("horas") || "", 10);
   const mapa = canon ? CANON_MAP[canon] : null;
   if (!mapa) return json([]);
 
@@ -187,16 +225,27 @@ async function handleArmonizada(env, params) {
   let filas = [];
   for (const [estacion, columna, valor] of stations) {
     if (valor === null || valor === undefined) continue;
-    // Traer solo las horas MÁS RECIENTES por estación (antes traía todo el
-    // historial agrupado y luego cortaba las primeras `limit` filas del
-    // total combinado — que, al estar ordenado ascendente, eran siempre
-    // las más viejas, sin importar qué pidiera el frontend).
-    const sql = `SELECT hora, valor, n_registros FROM (
-                   SELECT strftime('%Y-%m-%d %H', fecha_hora_utc) AS hora, AVG(valor) AS valor, COUNT(*) AS n_registros
-                   FROM mediciones WHERE estacion = ? AND ${columna} = ?
-                   GROUP BY hora ORDER BY hora DESC LIMIT ?
-                 ) ORDER BY hora ASC`;
-    const { results } = await env.DB.prepare(sql).bind(estacion, valor, limit).all();
+    let sql, binds;
+    if (horasVentana > 0) {
+      sql = `SELECT strftime('%Y-%m-%d %H', fecha_hora_utc) AS hora, AVG(valor) AS valor, COUNT(*) AS n_registros
+             FROM mediciones
+             WHERE estacion = ? AND ${columna} = ?
+               AND fecha_hora_utc >= datetime('now', '-' || ? || ' hours')
+             GROUP BY hora ORDER BY hora ASC`;
+      binds = [estacion, valor, horasVentana];
+    } else {
+      // Sin "horas" (fallback legado): traer solo las horas MÁS RECIENTES
+      // por estación (antes traía todo el historial agrupado y cortaba las
+      // primeras `limit` filas del total combinado — que, al estar ordenado
+      // ascendente, eran siempre las más viejas — ver commit anterior).
+      sql = `SELECT hora, valor, n_registros FROM (
+               SELECT strftime('%Y-%m-%d %H', fecha_hora_utc) AS hora, AVG(valor) AS valor, COUNT(*) AS n_registros
+               FROM mediciones WHERE estacion = ? AND ${columna} = ?
+               GROUP BY hora ORDER BY hora DESC LIMIT ?
+             ) ORDER BY hora ASC`;
+      binds = [estacion, valor, limit];
+    }
+    const { results } = await env.DB.prepare(sql).bind(...binds).all();
     for (const r of results) {
       filas.push({ hora: r.hora, estacion: ARMONIZADA_NOMBRE[estacion], valor: r.valor, n_registros: r.n_registros });
     }
