@@ -307,7 +307,7 @@ canvas{width:100% !important}
   <div class="section active" id="tab-actuales">
     <div class="badge-warn">⚠ datos sin validar — operativos en tiempo útil</div>
     <div id="cards-wrap"><div class="loader">Consultando datos...</div></div>
-    <div class="version-footer">v5.1 — 2026-03-24</div>
+    <div class="version-footer" id="version-footer-actuales"></div>
   </div>
 
   <!-- HISTORIAL -->
@@ -641,8 +641,7 @@ canvas{width:100% !important}
       <p style="margin-top:6px">También desarrollado en el marco de actividades de la <strong style="color:var(--text)">Dirección de Vialidad de la Provincia de Buenos Aires (DVBA) — Zona VI</strong>, Saladillo.</p>
       <p style="margin-top:6px;color:var(--muted);font-size:11px">Los datos son operativos en tiempo útil y no han sido validados formalmente por los organismos responsables. Las diferencias entre estaciones pueden reflejar tanto variabilidad microclimática real como offsets de calibración de los sensores.</p>
     </div>
-    <div style="text-align:center;font-family:var(--mono);font-size:10px;color:var(--muted);padding:10px 0;border-top:1px solid var(--border)">
-      v6.0 — 2026-08-22 · migración de Supabase a Cloudflare D1 · Desarrollado con Claude (Anthropic) · Saladillo, Buenos Aires
+    <div style="text-align:center;font-family:var(--mono);font-size:10px;color:var(--muted);padding:10px 0;border-top:1px solid var(--border)" id="version-footer-acerca">
     </div>
   </div>
 
@@ -1133,10 +1132,13 @@ async function cargarGrafico() {
 
   try {
     const q = est.campoParam === "codigo"
-      ? `select=fecha_hora_ar,valor&codigo=eq.${pid}&order=fecha_hora_utc.asc&limit=${limit}`
-      : `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(pid)}&order=insertado_en.asc&limit=${limit}`;
+      ? `select=fecha_hora_ar,valor&codigo=eq.${pid}&order=fecha_hora_utc.desc&limit=${limit}`
+      : `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(pid)}&order=insertado_en.desc&limit=${limit}`;
 
-    const rows   = await supaFetch(est.tabla, q);
+    // Se pide en orden descendente (las N más recientes) y se invierte
+    // para graficar en orden cronológico. Pedir ascendente+limit devolvía
+    // siempre las N filas MÁS VIEJAS de todo el historial.
+    const rows   = (await supaFetch(est.tabla, q)).reverse();
     const labels = rows.map(r => (r.fecha_hora_ar||"").slice(0,16));
     const data   = rows.map(r => parseFloat(r.valor));
     const tc     = dark ? "#8b949e" : "#57606a";
@@ -1272,13 +1274,16 @@ async function cargarVientoTemporal() {
   try {
     let qVel, qDir;
     if (est.campoParam==="codigo"){
-      qVel=`select=valor,fecha_hora_ar&codigo=eq.${est.paramVelViento}&order=fecha_hora_utc.asc&limit=${limit}`;
-      qDir=`select=valor,${tsKey}&codigo=eq.${est.paramDirViento}&order=fecha_hora_utc.asc&limit=${limit}`;
+      qVel=`select=valor,fecha_hora_ar&codigo=eq.${est.paramVelViento}&order=fecha_hora_utc.desc&limit=${limit}`;
+      qDir=`select=valor,${tsKey}&codigo=eq.${est.paramDirViento}&order=fecha_hora_utc.desc&limit=${limit}`;
     } else {
-      qVel=`select=valor,fecha_hora_ar&parametro=eq.${encodeURIComponent(est.paramVelViento)}&order=insertado_en.asc&limit=${limit}`;
-      qDir=`select=valor,${tsKey}&parametro=eq.${encodeURIComponent(est.paramDirViento)}&order=insertado_en.asc&limit=${limit}`;
+      qVel=`select=valor,fecha_hora_ar&parametro=eq.${encodeURIComponent(est.paramVelViento)}&order=insertado_en.desc&limit=${limit}`;
+      qDir=`select=valor,${tsKey}&parametro=eq.${encodeURIComponent(est.paramDirViento)}&order=insertado_en.desc&limit=${limit}`;
     }
-    const [rowsVel, rowsDir] = await Promise.all([supaFetch(est.tabla,qVel), supaFetch(est.tabla,qDir)]);
+    // desc+limit trae las N más recientes; se invierte para orden cronológico
+    const [rowsVelRaw, rowsDirRaw] = await Promise.all([supaFetch(est.tabla,qVel), supaFetch(est.tabla,qDir)]);
+    const rowsVel = rowsVelRaw.reverse();
+    const rowsDir = rowsDirRaw.reverse();
     const labels  = rowsVel.map(r=>(r.fecha_hora_ar||"").slice(0,16));
     const velData = rowsVel.map(r=>parseFloat(r.valor));
     const gc      = dark?"rgba(48,54,61,0.4)":"rgba(208,215,222,0.4)";
@@ -1391,12 +1396,14 @@ async function cargarGraficoComparativo() {
     } else {
       // Fallback: consulta individual (parámetros sin vista armonizada)
       const queries = [
-        mapParam.eet !== null ? supaFetch("mediciones_ema", `select=fecha_hora_ar,valor&codigo=eq.${mapParam.eet}&order=fecha_hora_utc.asc&limit=${limit}`) : Promise.resolve([]),
-        mapParam.cfr !== null ? supaFetch("mediciones_cfr", `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.cfr)}&order=insertado_en.asc&limit=${limit}`) : Promise.resolve([]),
-        mapParam.dc  !== null ? supaFetch("mediciones_dc",  `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.dc)}&order=insertado_en.asc&limit=${limit}`)  : Promise.resolve([]),
-        mapParam.cs  !== null ? supaFetch("mediciones_cs",  `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.cs)}&order=insertado_en.asc&limit=${limit}`)  : Promise.resolve([]),
+        mapParam.eet !== null ? supaFetch("mediciones_ema", `select=fecha_hora_ar,valor&codigo=eq.${mapParam.eet}&order=fecha_hora_utc.desc&limit=${limit}`) : Promise.resolve([]),
+        mapParam.cfr !== null ? supaFetch("mediciones_cfr", `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.cfr)}&order=insertado_en.desc&limit=${limit}`) : Promise.resolve([]),
+        mapParam.dc  !== null ? supaFetch("mediciones_dc",  `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.dc)}&order=insertado_en.desc&limit=${limit}`)  : Promise.resolve([]),
+        mapParam.cs  !== null ? supaFetch("mediciones_cs",  `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(mapParam.cs)}&order=insertado_en.desc&limit=${limit}`)  : Promise.resolve([]),
       ];
-      const [rEet, rCfr, rDc, rCs] = await Promise.all(queries);
+      // desc+limit trae las N más recientes; se invierte para orden cronológico
+      const [rEetRaw, rCfrRaw, rDcRaw, rCsRaw] = await Promise.all(queries);
+      const rEet = rEetRaw.reverse(), rCfr = rCfrRaw.reverse(), rDc = rDcRaw.reverse(), rCs = rCsRaw.reverse();
       const serieRef = rEet.length > 0 ? rEet : [rCfr,rDc,rCs].reduce((a,b)=>b.length>a.length?b:a,rCfr);
       labels = serieRef.map(r => (r.fecha_hora_ar||"").slice(0,13));
       const mp = (rows) => {
@@ -1853,6 +1860,12 @@ function closeMore(){
   document.getElementById("more-menu").classList.remove("open");
   document.getElementById("more-overlay").classList.remove("open");
 }
+
+/* ── VERSIÓN — fuente única, se refleja en todos los pies de página ── */
+const APP_VERSION = "v6.0 — 2026-08-22";
+const APP_VERSION_DETALLE = `${APP_VERSION} · migración de Supabase a Cloudflare D1 · Desarrollado con Claude (Anthropic) · Saladillo, Buenos Aires`;
+document.getElementById("version-footer-actuales").textContent = APP_VERSION;
+document.getElementById("version-footer-acerca").textContent = APP_VERSION_DETALLE;
 
 /* ── INIT ── */
 cargarActuales();

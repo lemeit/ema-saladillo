@@ -137,10 +137,15 @@ async function handleTemperaturaComparativa(env, params) {
 
   const porEstacion = {};
   for (const [estacion, clave, columna, valor] of stations) {
-    const sql = `SELECT strftime('%Y-%m-%d %H', fecha_hora_utc) AS hora, AVG(valor) AS valor
-                 FROM mediciones WHERE estacion = ? AND ${columna} = ?
-                 GROUP BY hora`;
-    const { results } = await env.DB.prepare(sql).bind(estacion, valor).all();
+    // Traer solo las horas MÁS RECIENTES por estación (antes se agrupaba
+    // TODO el historial y luego se tomaban las primeras `limit` horas del
+    // conjunto ordenado ascendente, que siempre eran las más viejas).
+    const sql = `SELECT hora, valor FROM (
+                   SELECT strftime('%Y-%m-%d %H', fecha_hora_utc) AS hora, AVG(valor) AS valor
+                   FROM mediciones WHERE estacion = ? AND ${columna} = ?
+                   GROUP BY hora ORDER BY hora DESC LIMIT ?
+                 ) ORDER BY hora ASC`;
+    const { results } = await env.DB.prepare(sql).bind(estacion, valor, limit).all();
     porEstacion[clave] = {};
     for (const r of results) porEstacion[clave][r.hora] = r.valor;
   }
@@ -154,7 +159,8 @@ async function handleTemperaturaComparativa(env, params) {
     ]),
   ].sort();
 
-  const filas = horas.slice(0, limit).map((h) => ({
+  // Nos quedamos con las `limit` horas más recientes del conjunto combinado
+  const filas = horas.slice(-limit).map((h) => ({
     hora: h,
     eet: porEstacion.eet[h] ?? null,
     cfr: porEstacion.cfr[h] ?? null,
@@ -181,16 +187,22 @@ async function handleArmonizada(env, params) {
   let filas = [];
   for (const [estacion, columna, valor] of stations) {
     if (valor === null || valor === undefined) continue;
-    const sql = `SELECT strftime('%Y-%m-%d %H', fecha_hora_utc) AS hora, AVG(valor) AS valor, COUNT(*) AS n_registros
-                 FROM mediciones WHERE estacion = ? AND ${columna} = ?
-                 GROUP BY hora`;
-    const { results } = await env.DB.prepare(sql).bind(estacion, valor).all();
+    // Traer solo las horas MÁS RECIENTES por estación (antes traía todo el
+    // historial agrupado y luego cortaba las primeras `limit` filas del
+    // total combinado — que, al estar ordenado ascendente, eran siempre
+    // las más viejas, sin importar qué pidiera el frontend).
+    const sql = `SELECT hora, valor, n_registros FROM (
+                   SELECT strftime('%Y-%m-%d %H', fecha_hora_utc) AS hora, AVG(valor) AS valor, COUNT(*) AS n_registros
+                   FROM mediciones WHERE estacion = ? AND ${columna} = ?
+                   GROUP BY hora ORDER BY hora DESC LIMIT ?
+                 ) ORDER BY hora ASC`;
+    const { results } = await env.DB.prepare(sql).bind(estacion, valor, limit).all();
     for (const r of results) {
       filas.push({ hora: r.hora, estacion: ARMONIZADA_NOMBRE[estacion], valor: r.valor, n_registros: r.n_registros });
     }
   }
   filas.sort((a, b) => (a.hora < b.hora ? -1 : a.hora > b.hora ? 1 : 0));
-  return json(filas.slice(0, limit));
+  return json(filas);
 }
 
 export default {
