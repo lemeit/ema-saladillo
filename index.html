@@ -59,11 +59,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .status{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--muted)}
 
-/* ── THEME BTN ── */
-.theme-btn{background:var(--surf2);border:1px solid var(--border);border-radius:7px;
-  width:32px;height:28px;cursor:pointer;display:flex;align-items:center;
-  justify-content:center;font-size:14px;transition:background .15s;flex-shrink:0}
-.theme-btn:hover{background:var(--border)}
+/* ── THEME BTN — minimalista, igual que profe.lemeit.ar (solo el ícono, sin caja) ── */
+.theme-btn{background:none;border:none;padding:0 .4rem;cursor:pointer;
+  display:inline-flex;align-items:center;color:var(--accent);flex-shrink:0}
+.theme-btn svg{width:17px;height:17px;display:block}
+[data-theme="dark"] .theme-btn .moon{display:none}
+[data-theme="light"] .theme-btn .sun{display:none}
 
 /* ── NAV TABS ── */
 .nav{background:var(--surf);border-bottom:1px solid var(--border);
@@ -292,7 +293,10 @@ canvas{width:100% !important}
       <button class="lm-switcher-btn">Portales ⌄</button>
       <div class="lm-switcher-menu"></div>
     </div>
-    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar modo">🌙</button>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Cambiar modo">
+      <svg class="moon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      <svg class="sun" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+    </button>
   </div>
 </div>
 
@@ -793,11 +797,11 @@ function gradosARosa(g) { return RUMBOS[Math.round(g/22.5)%16]; }
 /* ═══════════════════════════════════════════
    TEMA
 ═══════════════════════════════════════════ */
+// El ícono sol/luna se muestra/oculta solo con CSS según [data-theme] (ver <style>).
 function toggleTheme() {
   const html = document.documentElement;
   const dark = html.getAttribute("data-theme") === "dark";
   html.setAttribute("data-theme", dark ? "light" : "dark");
-  document.getElementById("theme-btn").textContent = dark ? "🌙" : "☀️";
   localStorage.setItem("ema-theme", dark ? "light" : "dark");
   // Si el mapa está visible, recargar tile
   if (mapaInst && document.getElementById("tab-mapa").classList.contains("active")) {
@@ -808,7 +812,6 @@ function toggleTheme() {
   const saved = localStorage.getItem("ema-theme");
   if (saved) {
     document.documentElement.setAttribute("data-theme", saved);
-    document.getElementById("theme-btn").textContent = saved === "dark" ? "🌙" : "☀️";
   }
 })();
 
