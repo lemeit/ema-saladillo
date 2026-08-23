@@ -141,6 +141,11 @@ canvas{width:100% !important}
 .version-footer{margin-top:24px;padding-top:10px;border-top:1px solid var(--border);
   font-family:var(--mono);font-size:10px;color:var(--muted);text-align:right}
 
+/* ── FOOTER — igual que aq.lemeit.ar ── */
+footer{text-align:center;padding:24px 20px;color:var(--muted);font-size:10px;
+  font-family:var(--mono);border-top:1px solid var(--border);margin-top:8px}
+footer a{color:var(--accent);text-decoration:none}
+
 /* ══════════════════════════════════════
    RESPONSIVE — MOBILE FIRST
 ══════════════════════════════════════ */
@@ -319,7 +324,6 @@ canvas{width:100% !important}
   <div class="section active" id="tab-actuales">
     <div class="badge-warn">⚠ datos sin validar — operativos en tiempo útil</div>
     <div id="cards-wrap"><div class="loader">Consultando datos...</div></div>
-    <div class="version-footer" id="version-footer-actuales"></div>
   </div>
 
   <!-- HISTORIAL -->
@@ -658,6 +662,10 @@ canvas{width:100% !important}
   </div>
 
 </div><!-- /main -->
+
+<footer>
+  Proyecto <a href="https://profe.lemeit.ar" target="_blank">lemeit.ar</a> · <span id="footer-version"></span>
+</footer>
 
 <!-- BOTTOM NAV MOBILE -->
 <div class="bottom-nav">
@@ -1880,7 +1888,7 @@ function closeMore(){
 /* ── VERSIÓN — fuente única, se refleja en todos los pies de página ── */
 const APP_VERSION = "v6.0 — 2026-08-22";
 const APP_VERSION_DETALLE = `${APP_VERSION} · migración de Supabase a Cloudflare D1 · Desarrollado con Claude (Anthropic) · Saladillo, Buenos Aires`;
-document.getElementById("version-footer-actuales").textContent = APP_VERSION;
+document.getElementById("footer-version").textContent = APP_VERSION;
 document.getElementById("version-footer-acerca").textContent = APP_VERSION_DETALLE;
 
 /* ── INIT ── */
