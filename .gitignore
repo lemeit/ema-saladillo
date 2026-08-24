@@ -33,3 +33,6 @@ Thumbs.db
 # Migración D1 (dumps de una sola vez, ya importados; reproducibles con tools/export_supabase_to_json.py)
 migracion_d1/
 .wrangler/
+
+# Migrado a repo propio (agua-saladillo) — copia local de respaldo, ya no se versiona
+docs/agua_saladillo.html
