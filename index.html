@@ -153,12 +153,10 @@ canvas{width:100% !important}
    RESPONSIVE — MOBILE FIRST
 ══════════════════════════════════════ */
 
-/* ── Mobile bottom nav (reemplaza tabs en pantalla chica) ── */
+/* ── Mobile: mismo patrón que aq/wq — el nav de tabs sigue visible,
+   con scroll horizontal (ver .nav más arriba), sin barra inferior aparte ── */
 @media (max-width:640px){
   :root{--header-h:52px}
-
-  /* Ocultar nav horizontal */
-  .nav{display:none}
 
   /* Header compacto */
   .header{padding:8px 12px;gap:8px}
@@ -195,63 +193,7 @@ canvas{width:100% !important}
 
   /* Selector de estación — ocultar labels largos */
   .est-btn[title*="EEST"]::after{content:"EET"}
-
-  /* Barra de navegación inferior */
-  .bottom-nav{display:flex !important}
-  body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
 }
-
-@media (min-width:641px){
-  .bottom-nav{display:none !important}
-}
-
-/* ── Bottom navigation bar ── */
-.bottom-nav{
-  position:fixed;bottom:0;left:0;right:0;
-  background:var(--surf);border-top:1px solid var(--border);
-  display:none;
-  padding-bottom:env(safe-area-inset-bottom);
-  z-index:300;
-  box-shadow:0 -2px 8px var(--shadow);
-}
-.bottom-nav-inner{
-  display:grid;grid-template-columns:repeat(5,1fr);
-  height:56px;
-}
-.bnav-btn{
-  background:none;border:none;color:var(--muted);
-  display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:3px;cursor:pointer;
-  font-family:var(--sans);font-size:10px;
-  padding:6px 4px;transition:color .15s;
-}
-.bnav-btn.active{color:var(--accent)}
-.bnav-btn:hover:not(.active){color:var(--text)}
-.bnav-icon{font-size:18px;line-height:1}
-.bnav-label{font-size:9px;line-height:1}
-
-/* ── Más (overflow menu) ── */
-.more-menu{
-  position:fixed;bottom:60px;right:0;left:0;
-  background:var(--surf);border-top:1px solid var(--border);
-  display:none;flex-direction:column;
-  z-index:290;box-shadow:0 -4px 16px var(--shadow);
-}
-.more-menu.open{display:flex}
-.more-item{
-  background:none;border:none;border-bottom:1px solid var(--border);
-  color:var(--text);font-family:var(--sans);font-size:14px;
-  padding:14px 20px;cursor:pointer;text-align:left;
-  display:flex;align-items:center;gap:12px;
-}
-.more-item:last-child{border-bottom:none}
-.more-item:hover{background:var(--surf2)}
-.more-item.active{color:var(--accent)}
-.more-overlay{
-  position:fixed;inset:0;z-index:280;display:none;
-  background:rgba(0,0,0,.4);
-}
-.more-overlay.open{display:block}
 
 /* ── Tablet ── */
 @media (min-width:641px) and (max-width:900px){
@@ -667,36 +609,6 @@ canvas{width:100% !important}
 </div><!-- /main -->
 
 <footer class="lm-footer" id="lm-footer"></footer>
-
-<!-- BOTTOM NAV MOBILE -->
-<div class="bottom-nav">
-  <div class="bottom-nav-inner">
-    <button class="bnav-btn active" onclick="showTabMobile('actuales',this)" data-tab="actuales">
-      <span class="bnav-icon">🌡️</span><span class="bnav-label">Actuales</span>
-    </button>
-    <button class="bnav-btn" onclick="showTabMobile('grafico',this)" data-tab="grafico">
-      <span class="bnav-icon">📈</span><span class="bnav-label">Gráfico</span>
-    </button>
-    <button class="bnav-btn" onclick="showTabMobile('mapa',this)" data-tab="mapa">
-      <span class="bnav-icon">🗺️</span><span class="bnav-label">Mapa</span>
-    </button>
-    <button class="bnav-btn" onclick="showTabMobile('historial',this)" data-tab="historial">
-      <span class="bnav-icon">📋</span><span class="bnav-label">Historial</span>
-    </button>
-    <button class="bnav-btn" onclick="toggleMore()" id="more-btn">
-      <span class="bnav-icon">☰</span><span class="bnav-label">Más</span>
-    </button>
-  </div>
-</div>
-
-<!-- OVERLAY + MENÚ MÁS (mobile) -->
-<div class="more-overlay" id="more-overlay" onclick="closeMore()"></div>
-<div class="more-menu" id="more-menu">
-  <button class="more-item" onclick="showTabMobile('rosa',null);closeMore()">🌬️ &nbsp;Rosa de vientos</button>
-  <button class="more-item" onclick="showTabMobile('espacial',null);closeMore()">🗺 &nbsp;Análisis espacial</button>
-  <button class="more-item" onclick="showTabMobile('estaciones',null);closeMore()">📍 &nbsp;Estaciones</button>
-  <button class="more-item" onclick="showTabMobile('acerca',null);closeMore()">ℹ️ &nbsp;Acerca de</button>
-</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://design.lemeit.ar/lemeit-common.js"></script>
@@ -1861,29 +1773,6 @@ function showTab(id, btn) {
   if(id==="mapa")       cargarMapa();
   if(id==="espacial")   renderEspacial();
   if(id==="estaciones" || id==="acerca") {}
-}
-
-/* ── Mobile nav ── */
-function showTabMobile(id, btn) {
-  showTab(id, null);
-  document.querySelectorAll(".bnav-btn").forEach(b=>b.classList.remove("active"));
-  if(btn) btn.classList.add("active");
-  // Sincronizar nav desktop
-  document.querySelectorAll(".nav-btn").forEach(b=>{
-    if(b.getAttribute("onclick")?.includes("'"+id+"'")) b.classList.add("active");
-  });
-}
-
-function toggleMore() {
-  const menu=document.getElementById("more-menu");
-  const overlay=document.getElementById("more-overlay");
-  const open=menu.classList.contains("open");
-  if(open){closeMore();}
-  else{menu.classList.add("open");overlay.classList.add("open");}
-}
-function closeMore(){
-  document.getElementById("more-menu").classList.remove("open");
-  document.getElementById("more-overlay").classList.remove("open");
 }
 
 /* ── VERSIÓN — fuente única, se refleja en todos los pies de página ── */
