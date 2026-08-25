@@ -1,9 +1,0 @@
-# Normaliza los finales de línea a LF para todos los archivos de texto,
-# evita que Windows (CRLF) genere diffs falsos en cada checkout/commit.
-* text=auto eol=lf
-
-# Binarios: que git no los toque nunca
-*.docx binary
-*.png binary
-*.jpg binary
-*.jpeg binary
