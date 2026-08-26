@@ -224,8 +224,8 @@ canvas{width:100% !important}
 <div class="header">
   <div class="logo">EMA</div>
   <div class="header-mid">
-    <h1 id="h-titulo">EMA Saladillo — Red Meteorológica</h1>
-    <p id="h-sub">EMA-EET · EMA-CFR · EMA-DC · EMA-CS · Saladillo, Bs. As.</p>
+    <h1 id="h-titulo">EMA Saladillo</h1>
+    <p id="h-sub">Red de estaciones meteorológicas de Saladillo</p>
   </div>
   <div class="header-right">
     <div class="est-sel">
@@ -627,6 +627,12 @@ const ESTACIONES = {
     tabla:  "mediciones_ema",
     nombre: "EMA-EET — Est. 4094",
     sub:    "EMA-EET · EEST N°1 Gral. Savio · Red RMET/SNIH",
+    // Logo del proveedor de la red/hardware (TECMES), no de la institución
+    // que aloja la estación — a propósito, ver nota en el repo lemeit-design.
+    logoSrc: "https://design.lemeit.ar/logos/ema_tecmes_eet.png",
+    logoAlt: "TECMES",
+    logoHref: "https://snih.hidricosargentina.gob.ar/",
+    logoTitle: "TECMES — proveedor de la red RMET/SNIH de la que es parte EMA-EET",
     campoParam: "codigo",    // filtra por código numérico
     campofecha: "fecha_hora_utc",
     params: [
@@ -646,6 +652,10 @@ const ESTACIONES = {
     tabla:  "mediciones_cfr",
     nombre: "EMA-CFR — Davis Instruments",
     sub:    "EMA-CFR · Centro de Formación Rural · Saladillo",
+    logoSrc: "https://design.lemeit.ar/logos/ema_cfr.jpg",
+    logoAlt: "CFR Saladillo",
+    logoHref: "https://ema.cfrsaladillo.edu.ar/",
+    logoTitle: "Fundación Marzano — Centro de Formación Rural Saladillo",
     campoParam: "parametro",  // filtra por nombre
     campofecha: "insertado_en",
     params: [
@@ -666,6 +676,10 @@ const ESTACIONES = {
     tabla:  "mediciones_dc",
     nombre: "EMA-DC — Davis Instruments",
     sub:    "EMA-DC · Defensa Civil · Aeródromo Saladillo",
+    logoSrc: "https://design.lemeit.ar/logos/ema_aeroclub_defensacivil.png",
+    logoAlt: "Defensa Civil Saladillo",
+    logoHref: "https://defensacivil.saladillo.gob.ar/emadc/mb1.htm",
+    logoTitle: "Defensa Civil Saladillo — Aeródromo",
     campoParam: "parametro",
     campofecha: "insertado_en",
     lat: -35.60063, lon: -59.81350,
@@ -689,6 +703,10 @@ const ESTACIONES = {
     tabla:  "mediciones_cs",
     nombre: "EMA-CS — B° Falucho",
     sub:    "EMA-CS · Clima Saladillo · B° Falucho",
+    logoSrc: "https://design.lemeit.ar/logos/climasaladillo.png",
+    logoAlt: "Clima Saladillo",
+    logoHref: "https://climasaladillo.com/template/indexDesktop.php",
+    logoTitle: "Clima Saladillo — B° Falucho",
     campoParam: "parametro",
     campofecha: "insertado_en",
     lat: -35.64500, lon: -59.77580,
@@ -777,6 +795,7 @@ function setEstacion(id, btn) {
 
     document.getElementById("h-titulo").textContent = "Red EMA Saladillo — Comparativa";
     document.getElementById("h-sub").textContent    = "EMA-EET · EMA-CFR · EMA-DC · EMA-CS · Saladillo, Bs. As.";
+    renderFooterEma();
     cargarComparativa();
     return;
   }
@@ -784,6 +803,7 @@ function setEstacion(id, btn) {
   const est = ESTACIONES[id];
   document.getElementById("h-titulo").textContent = est.nombre;
   document.getElementById("h-sub").textContent    = est.sub;
+  renderFooterEma();
 
   // Restaurar selectores con parámetros propios de esta estación
   const paramKeys = Object.keys(est.paramHistorial);
@@ -1778,9 +1798,27 @@ function showTab(id, btn) {
 /* ── VERSIÓN — fuente única, se refleja en todos los pies de página ── */
 const APP_VERSION = "v6.0.1 — 2026-08-25";
 const APP_VERSION_DETALLE = `${APP_VERSION} · migración de Supabase a Cloudflare D1 · Desarrollado con Claude (Anthropic) · Saladillo, Buenos Aires`;
-if (window.LemeitCommon) {
-  LemeitCommon.renderFooter(document.getElementById("lm-footer"), { version: APP_VERSION });
+
+// Logo(s) en el footer: el de la estación seleccionada (proveedor del
+// hardware/red, no necesariamente la institución que la aloja — ver notas
+// en ESTACIONES.*.logoTitle), o los 4 juntos en la vista "Comparativa" y
+// como default antes de elegir una estación en particular.
+function footerLogosEma(id) {
+  const entry = (est) => ({ href: est.logoHref, src: est.logoSrc, alt: est.logoAlt, title: est.logoTitle });
+  if (id === "comp" || !ESTACIONES[id]) {
+    return Object.values(ESTACIONES).filter((est) => est.logoSrc).map(entry);
+  }
+  const est = ESTACIONES[id];
+  return est.logoSrc ? [entry(est)] : [];
 }
+function renderFooterEma() {
+  if (!window.LemeitCommon) return;
+  LemeitCommon.renderFooter(document.getElementById("lm-footer"), {
+    version: APP_VERSION,
+    logos: footerLogosEma(estActual),
+  });
+}
+renderFooterEma();
 document.getElementById("version-footer-acerca").textContent = APP_VERSION_DETALLE;
 
 /* ── INIT ── */
