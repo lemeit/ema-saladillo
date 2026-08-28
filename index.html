@@ -30,7 +30,7 @@
   --text:#2A211A;--muted:#6B5C4E;--shadow:rgba(43,30,20,.08);
 }
 
-html,body{height:100%}
+html,body{height:100%;overflow-x:hidden}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);
   min-height:100vh;padding-bottom:env(safe-area-inset-bottom);
   transition:background .25s,color .25s}
@@ -1816,7 +1816,7 @@ function showTab(id, btn) {
 }
 
 /* ── VERSIÓN — fuente única, se refleja en todos los pies de página ── */
-const APP_VERSION = "v6.0.5 — 2026-08-28";
+const APP_VERSION = "v6.0.6 — 2026-08-28";
 const APP_VERSION_DETALLE = `${APP_VERSION} · migración de Supabase a Cloudflare D1 · Desarrollado con Claude (Anthropic) · Saladillo, Buenos Aires`;
 
 // Logo(s) en el footer: el de la estación seleccionada (proveedor del
