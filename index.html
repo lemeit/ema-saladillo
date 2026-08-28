@@ -1435,17 +1435,23 @@ let mapaInst = null;
 let mapaTileLayer = null;
 async function cargarMapa() {
   const dark = document.documentElement.getAttribute("data-theme") !== "light";
+  // CARTO dio de baja el acceso sin API key a basemaps.cartocdn.com (ahora
+  // pide registrarse) — mientras se resuelve el alta, se usa el basemap gris
+  // de Esri (World_Light/Dark_Gray_Base), que no requiere key. Para volver a
+  // CARTO cuando llegue la API key, restaurar estas URLs a
+  // "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" /
+  // ".../light_all/{z}/{x}/{y}{r}.png" y agregar "?api_key=TU_KEY".
   const tileUrl = dark
-    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-    : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+    ? "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+    : "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}";
 
   if (!mapaInst) {
     mapaInst = L.map("mapa-container").setView([-35.628, -59.797], 13);
-    mapaTileLayer = L.tileLayer(tileUrl, { attribution:"© OpenStreetMap · CartoDB" }).addTo(mapaInst);
+    mapaTileLayer = L.tileLayer(tileUrl, { attribution:"Tiles © Esri", maxZoom: 16 }).addTo(mapaInst);
   } else {
     // Actualizar tile según tema actual
     if (mapaTileLayer) { mapaInst.removeLayer(mapaTileLayer); }
-    mapaTileLayer = L.tileLayer(tileUrl, { attribution:"© OpenStreetMap · CartoDB" }).addTo(mapaInst);
+    mapaTileLayer = L.tileLayer(tileUrl, { attribution:"Tiles © Esri", maxZoom: 16 }).addTo(mapaInst);
   }
 
   const estaciones_geo = [
@@ -1812,7 +1818,7 @@ function showTab(id, btn) {
 }
 
 /* ── VERSIÓN — fuente única, se refleja en todos los pies de página ── */
-const APP_VERSION = "v6.0.2 — 2026-08-28";
+const APP_VERSION = "v6.0.3 — 2026-08-28";
 const APP_VERSION_DETALLE = `${APP_VERSION} · migración de Supabase a Cloudflare D1 · Desarrollado con Claude (Anthropic) · Saladillo, Buenos Aires`;
 
 // Logo(s) en el footer: el de la estación seleccionada (proveedor del
