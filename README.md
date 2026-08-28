@@ -61,6 +61,10 @@ CF_API_TOKEN=...   # con permiso D1:Edit
 
 El archivo `index.html` (raíz del repo) es un single-file HTML estático que consulta el Worker de Cloudflare vía REST. No requiere backend propio. Deployado en Cloudflare Pages (`wrangler pages deploy`).
 
+**Logos de proveedor por estación** (agosto 2026): el footer muestra el logo del proveedor de la red/hardware de la estación seleccionada (o los 4 juntos en la vista "⇌ Comparativa") — TECMES para EMA-EET (deliberadamente el proveedor de la red RMET/SNIH, no la institución que aloja la estación), CFR Saladillo, Defensa Civil Saladillo y Clima Saladillo para las otras tres. Los mismos 4 logos también aparecen en el panel "Acerca de" (sección "📍 Estaciones de la red"), por ahora — más adelante podrían reemplazarse por fotos reales de cada estación/monitor. El tamaño de los logos del footer usa `logoSize: "md"` (20px) en vez del `"sm"` (15px) por defecto del footer compartido — ver `lemeit-design`.
+
+**Mapa**: los tiles se piden al propio Worker (`GET /tiles/:style/:z/:x/:y{@2x}.png`, `style` = `light_all` \| `dark_all`), que actúa de proxy hacia CARTO Basemaps agregando la API key del secret `CARTO_API_KEY` del lado del servidor — así la key nunca queda expuesta en el HTML público. Configurar con `npx wrangler secret put CARTO_API_KEY` desde `worker/`. Key gratuita (tope 5M tiles/mes) en [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey).
+
 ## Base de datos (Cloudflare D1)
 
 Base: `ema-saladillo-db` — tabla unificada `mediciones` (columna `estacion` distingue EMA-EET/CFR/DC/CS). Ver `d1/schema.sql` para el esquema completo, incluyendo el índice único que evita filas duplicadas.

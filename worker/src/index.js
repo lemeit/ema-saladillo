@@ -36,6 +36,31 @@ function json(data, status = 200) {
   });
 }
 
+// ── Proxy de tiles del mapa (CARTO Basemaps) ────────────────────────────────
+// CARTO ahora exige una API key para servir tiles. En vez de poner esa key
+// en el HTML público (cualquiera podría copiarla de "ver código fuente" y
+// gastar la cuota gratuita de 5M tiles/mes), el frontend le pide los tiles a
+// este Worker y es el Worker quien agrega la key en el secret CARTO_API_KEY
+// (`wrangler secret put CARTO_API_KEY`, nunca en este archivo ni en
+// wrangler.toml) al pedirle el tile a CARTO. Así la key nunca queda expuesta
+// del lado del cliente.
+const TILE_STYLES = new Set(["light_all", "dark_all"]);
+const TILE_SUBDOMAINS = "abcd";
+
+async function proxyCartoTile(env, style, z, x, y, retina) {
+  if (!TILE_STYLES.has(style)) return json({ error: "Estilo de tile inválido" }, 400);
+  if (!env.CARTO_API_KEY) return json({ error: "Falta configurar el secret CARTO_API_KEY" }, 500);
+  const sub = TILE_SUBDOMAINS[Math.floor(Math.random() * TILE_SUBDOMAINS.length)];
+  const cartoUrl = `https://${sub}.basemaps.cartocdn.com/${style}/${z}/${x}/${y}${retina}.png?key=${env.CARTO_API_KEY}`;
+  const resp = await fetch(cartoUrl, { cf: { cacheTtl: 604800, cacheEverything: true } });
+  if (!resp.ok) return new Response("Error obteniendo el tile de CARTO", { status: resp.status });
+  const headers = new Headers();
+  headers.set("Content-Type", resp.headers.get("Content-Type") || "image/png");
+  headers.set("Cache-Control", "public, max-age=604800");
+  headers.set("Access-Control-Allow-Origin", "*");
+  return new Response(resp.body, { status: 200, headers });
+}
+
 // tabla vieja de Supabase -> código de estación en la tabla unificada `mediciones`
 const TABLE_MAP = {
   mediciones_ema: "EMA-EET",
@@ -261,6 +286,13 @@ export default {
     }
 
     const url = new URL(request.url);
+
+    const tileMatch = url.pathname.match(/^\/tiles\/(light_all|dark_all)\/(\d+)\/(-?\d+)\/(-?\d+)(@2x)?\.png$/);
+    if (tileMatch) {
+      const [, style, z, x, y, retina] = tileMatch;
+      return proxyCartoTile(env, style, z, x, y, retina || "");
+    }
+
     const match = url.pathname.match(/^\/rest\/v1\/([a-z_]+)$/);
     if (!match) return json({ error: "Not found" }, 404);
 
