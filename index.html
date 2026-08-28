@@ -213,6 +213,10 @@ canvas{width:100% !important}
 .about-est-info{flex:1;min-width:0}
 .about-est-name{font-size:12px;font-weight:600}
 .about-est-sub{font-size:10px;color:var(--muted);font-family:var(--mono)}
+/* Logo del proveedor de cada estación, por ahora — más adelante podría
+   reemplazarse por una foto real del equipo/monitor instalado. */
+.about-est-logo{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;background:#fff;border-radius:6px;padding:4px 6px}
+.about-est-logo img{display:block;height:22px;width:auto}
 @media (max-width:640px){
   .about-grid{grid-template-columns:1fr}
 }
@@ -560,6 +564,9 @@ canvas{width:100% !important}
             <div class="about-est-name">EMA-EET — EEST N°1 "Gral. Savio"</div>
             <div class="about-est-sub">Tecmes RMET · API SNIH/INA · -35.64533, -59.78482</div>
           </div>
+          <a href="https://snih.hidricosargentina.gob.ar/" target="_blank" class="about-est-logo" title="TECMES — proveedor de la red RMET/SNIH">
+            <img src="https://design.lemeit.ar/logos/ema_tecmes_eet.png" alt="TECMES">
+          </a>
         </div>
         <div class="about-est-row">
           <div class="about-dot" style="background:#8FB56B"></div>
@@ -567,6 +574,9 @@ canvas{width:100% !important}
             <div class="about-est-name">EMA-CFR — Centro de Formación Rural</div>
             <div class="about-est-sub">Davis Instruments · HTML scraping · -35.62236, -59.78359</div>
           </div>
+          <a href="https://ema.cfrsaladillo.edu.ar/" target="_blank" class="about-est-logo" title="Fundación Marzano — Centro de Formación Rural Saladillo">
+            <img src="https://design.lemeit.ar/logos/ema_cfr.jpg" alt="CFR Saladillo">
+          </a>
         </div>
         <div class="about-est-row">
           <div class="about-dot" style="background:#D9736F"></div>
@@ -574,6 +584,9 @@ canvas{width:100% !important}
             <div class="about-est-name">EMA-DC — Defensa Civil · Aeródromo</div>
             <div class="about-est-sub">Davis / Meteobridge · OCR · -35.60063, -59.81350</div>
           </div>
+          <a href="https://defensacivil.saladillo.gob.ar/emadc/mb1.htm" target="_blank" class="about-est-logo" title="Defensa Civil Saladillo — Aeródromo">
+            <img src="https://design.lemeit.ar/logos/ema_aeroclub_defensacivil.png" alt="Defensa Civil Saladillo">
+          </a>
         </div>
         <div class="about-est-row">
           <div class="about-dot" style="background:#D9A441"></div>
@@ -581,6 +594,9 @@ canvas{width:100% !important}
             <div class="about-est-name">EMA-CS — Clima Saladillo · B° Falucho</div>
             <div class="about-est-sub">Davis / Meteotemplate · JSON · -35.64500, -59.77580</div>
           </div>
+          <a href="https://climasaladillo.com/template/indexDesktop.php" target="_blank" class="about-est-logo" title="Clima Saladillo — B° Falucho">
+            <img src="https://design.lemeit.ar/logos/climasaladillo.png" alt="Clima Saladillo">
+          </a>
         </div>
       </div>
       <div class="about-card">
@@ -1816,6 +1832,9 @@ function renderFooterEma() {
   LemeitCommon.renderFooter(document.getElementById("lm-footer"), {
     version: APP_VERSION,
     logos: footerLogosEma(estActual),
+    // "md" (20px) en vez del "sm" (15px) por defecto del footer compartido:
+    // los logos de proveedor de estación se veían muy chicos.
+    logoSize: "md",
   });
 }
 renderFooterEma();
