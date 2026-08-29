@@ -73,7 +73,7 @@ def main():
 
 
 if __name__ == "__main__":
-    if not SUPA_URL or not SUPA_KEY:
+    if not os.environ.get("SUPA_URL") or not os.environ.get("SUPA_KEY"):
         print("  ⚠  Variables SUPA_URL / SUPA_KEY no definidas — sin Supabase")
 
     main()
