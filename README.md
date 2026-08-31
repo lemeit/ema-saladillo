@@ -71,6 +71,8 @@ Base: `ema-saladillo-db` — tabla unificada `mediciones` (columna `estacion` di
 
 El Worker `worker/src/index.js` expone rutas compatibles con el formato PostgREST que usaba el dashboard (`mediciones_ema`, `mediciones_cfr`, `mediciones_dc`, `mediciones_cs`, `v_ema_armonizada`, `v_temperatura_comparativa`), calculadas sobre la tabla unificada.
 
+**API pública (agosto 2026)**: las mismas rutas de arriba están pensadas para que cualquiera las consuma directo — CORS abierto, sin autenticación ni token, son de solo lectura. Todas aceptan `desde`/`hasta` (`YYYY-MM-DD[ HH:MM:SS]`, UTC) como rango de fechas absoluto (pisa a `horas` si viene alguno de los dos) y `&formato=csv` para bajar CSV en vez de JSON. Documentación con ejemplos: [`emas.lemeit.ar/api.html`](https://emas.lemeit.ar/api.html) (fuente: `api.html` en la raíz de este repo).
+
 ## Proyecto educativo
 
 Laboratorio de Industrias · 7° Año Técnico Químico  
