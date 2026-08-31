@@ -16,7 +16,7 @@
  *       &formato=csv  (devuelve CSV en vez de JSON)
  *   GET /rest/v1/v_temperatura_comparativa?select=hora,eet,cfr,dc,cs&order=hora.asc&limit=N&horas=N&formato=csv
  *   GET /rest/v1/v_ema_armonizada?select=hora,estacion,valor&parametro=eq.CANON&order=hora.asc&limit=N&horas=N&formato=csv
- * Documentación con ejemplos: /api.html en ema.lemeit.ar
+ * Documentación con ejemplos: /api.html en emas.lemeit.ar
  *
  * "horas" (opcional, en las 3 rutas): filtra por ventana de calendario real
  * (fecha_hora_utc >= ahora - N horas) en vez de por cantidad de filas. Lo usan
