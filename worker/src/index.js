@@ -8,11 +8,15 @@
  * (mediciones_ema/cfr/dc/cs) viven unificadas en una sola tabla D1
  * `mediciones` con columna `estacion`.
  *
- * Rutas:
+ * Rutas (API pública, de solo lectura — sin autenticación, CORS abierto):
  *   GET /rest/v1/mediciones_ema | mediciones_cfr | mediciones_dc | mediciones_cs
  *       ?select=...&order=campo.asc|desc&limit=N&codigo=eq.X&parametro=eq.X&horas=N
- *   GET /rest/v1/v_temperatura_comparativa?select=hora,eet,cfr,dc,cs&order=hora.asc&limit=N&horas=N
- *   GET /rest/v1/v_ema_armonizada?select=hora,estacion,valor&parametro=eq.CANON&order=hora.asc&limit=N&horas=N
+ *       ?desde=YYYY-MM-DD[ HH:MM:SS]&hasta=...  (rango de fechas absoluto en UTC,
+ *        pisa a "horas" si viene alguno de los dos)
+ *       &formato=csv  (devuelve CSV en vez de JSON)
+ *   GET /rest/v1/v_temperatura_comparativa?select=hora,eet,cfr,dc,cs&order=hora.asc&limit=N&horas=N&formato=csv
+ *   GET /rest/v1/v_ema_armonizada?select=hora,estacion,valor&parametro=eq.CANON&order=hora.asc&limit=N&horas=N&formato=csv
+ * Documentación con ejemplos: /api.html en ema.lemeit.ar
  *
  * "horas" (opcional, en las 3 rutas): filtra por ventana de calendario real
  * (fecha_hora_utc >= ahora - N horas) en vez de por cantidad de filas. Lo usan
@@ -34,6 +38,38 @@ function json(data, status = 200) {
     status,
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
+}
+
+// ── Exportación CSV ─────────────────────────────────────────────────────────
+// Las columnas del CSV se toman de las claves del primer objeto del array
+// (mismas claves que ya arma buildRow()/los handlers de vistas), así que
+// nunca se desincroniza de lo que cada ruta ya devuelve en JSON.
+function toCsv(rows) {
+  if (!rows.length) return "";
+  const headers = Object.keys(rows[0]);
+  const escape = (v) => {
+    if (v === null || v === undefined) return "";
+    const s = String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [headers.join(",")];
+  for (const r of rows) lines.push(headers.map((h) => escape(r[h])).join(","));
+  return lines.join("\n");
+}
+
+function csvResponse(rows, filename) {
+  return new Response(toCsv(rows), {
+    status: 200,
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      ...CORS_HEADERS,
+    },
+  });
+}
+
+function wantsCsv(params) {
+  return (params.get("formato") || "").toLowerCase() === "csv";
 }
 
 // ── Proxy de tiles del mapa (CARTO Basemaps) ────────────────────────────────
@@ -151,12 +187,21 @@ async function handleMediciones(env, tabla, params) {
     binds.push(decodeURIComponent(parametroEq.slice(3)));
   }
 
+  // Rango de fechas absoluto en UTC (ej. ?desde=2026-08-01&hasta=2026-08-15),
+  // pensado para quien quiera bajar un período puntual en vez de una ventana
+  // relativa a "ahora". Si viene desde y/o hasta, pisa a "horas".
+  const desde = params.get("desde");
+  const hasta = params.get("hasta");
+  if (desde) { where += " AND fecha_hora_utc >= ?"; binds.push(desde); }
+  if (hasta) { where += " AND fecha_hora_utc <= ?"; binds.push(hasta); }
+
   // "horas": ventana de calendario real (ej. últimas 720 horas = últimos 30
   // días), en vez de "las últimas N filas que existan" — con estaciones que
   // tienen huecos de datos, "últimas N filas" puede terminar trayendo datos
-  // de varios meses atrás en vez de del rango pedido.
+  // de varios meses atrás en vez de del rango pedido. Solo aplica si no se
+  // especificó un rango de fechas absoluto.
   const horas = parseInt(params.get("horas") || "", 10);
-  if (horas > 0) {
+  if (!desde && !hasta && horas > 0) {
     where += " AND fecha_hora_utc >= datetime('now', '-' || ? || ' hours')";
     binds.push(horas);
   }
@@ -166,7 +211,9 @@ async function handleMediciones(env, tabla, params) {
   binds.push(limit);
 
   const { results } = await env.DB.prepare(sql).bind(...binds).all();
-  return json(results.map((r) => buildRow(r, selectFields)));
+  const filas = results.map((r) => buildRow(r, selectFields));
+  if (wantsCsv(params)) return csvResponse(filas, `${tabla}.csv`);
+  return json(filas);
 }
 
 async function handleTemperaturaComparativa(env, params) {
@@ -228,6 +275,7 @@ async function handleTemperaturaComparativa(env, params) {
     dc: porEstacion.dc[h] ?? null,
     cs: porEstacion.cs[h] ?? null,
   }));
+  if (wantsCsv(params)) return csvResponse(filas, "temperatura_comparativa.csv");
   return json(filas);
 }
 
@@ -276,6 +324,7 @@ async function handleArmonizada(env, params) {
     }
   }
   filas.sort((a, b) => (a.hora < b.hora ? -1 : a.hora > b.hora ? 1 : 0));
+  if (wantsCsv(params)) return csvResponse(filas, "ema_armonizada.csv");
   return json(filas);
 }
 

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>API · EMA Saladillo</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="stylesheet" href="https://design.lemeit.ar/lemeit-theme.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1A1612;--surf:#221E18;--surf2:#2B241D;--border:#3D3028;
+  --accent:#D9691F;--green:#8FB56B;
+  --text:#F2ECE4;--muted:#C9BEB2;--shadow:rgba(0,0,0,.4);
+  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif;
+}
+[data-theme="light"]{
+  --bg:#FAF7F2;--surf:#fff;--surf2:#F0EBE2;--border:#E0D9CC;
+  --accent:#9B3D00;--green:#4C7A3D;
+  --text:#2A211A;--muted:#6B5C4E;--shadow:rgba(43,30,20,.08);
+}
+html,body{overflow-x:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;transition:background .25s,color .25s}
+.header{
+  background:var(--surf);border-bottom:1px solid var(--border);padding:14px 16px;
+  display:flex;align-items:center;gap:10px;position:sticky;top:0;box-shadow:0 1px 4px var(--shadow);
+}
+.logo{font-family:var(--mono);font-size:10px;font-weight:700;color:#fff;background:var(--accent);padding:4px 7px;border-radius:5px;flex-shrink:0}
+.header h1{font-size:15px;font-weight:600}
+.header a.back{margin-left:auto;font-size:12px;color:var(--muted);text-decoration:none}
+.header a.back:hover{color:var(--accent)}
+main{max-width:840px;margin:0 auto;padding:24px 18px 60px}
+h2{font-size:16px;margin:34px 0 8px;color:var(--accent)}
+h2:first-of-type{margin-top:0}
+p{margin-bottom:10px;color:var(--text)}
+p.dim{color:var(--muted);font-size:13px}
+code,pre{font-family:var(--mono);font-size:12.5px}
+code{background:var(--surf2);color:var(--text);padding:2px 5px;border-radius:4px}
+pre{background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px 14px;overflow-x:auto;margin:10px 0 16px;color:var(--text)}
+.endpoint{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px}
+.endpoint .path{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);display:block;margin-bottom:6px;word-break:break-all}
+.method{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--green);border:1px solid var(--green);border-radius:4px;padding:1px 6px;margin-right:8px;vertical-align:middle}
+table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:12.5px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+td code{font-size:11.5px}
+footer{max-width:840px;margin:0 auto;padding:0 18px 40px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">EMA</div>
+  <h1>API · EMA Saladillo</h1>
+  <a class="back" href="index.html">&larr; Volver al portal</a>
+</div>
+
+<main>
+  <p>Esta es la API pública de solo lectura que ya usa <code>ema.lemeit.ar</code> para mostrar los datos de las 4 estaciones meteorológicas de Saladillo (EET N°1, CFR, DC y CS). Cualquiera puede consumirla directamente, sin registro ni token: es de lectura, CORS abierto, y devuelve los mismos datos que ya son públicos en el portal.</p>
+
+  <p class="dim">Base URL: <code>https://ema-saladillo-api.fisicai-eureka-01.workers.dev</code></p>
+
+  <h2>Las 4 estaciones</h2>
+  <table>
+    <tr><th>Tabla</th><th>Estación</th></tr>
+    <tr><td><code>mediciones_ema</code></td><td>EET N°1</td></tr>
+    <tr><td><code>mediciones_cfr</code></td><td>CFR</td></tr>
+    <tr><td><code>mediciones_dc</code></td><td>DC</td></tr>
+    <tr><td><code>mediciones_cs</code></td><td>CS</td></tr>
+  </table>
+
+  <h2>GET /rest/v1/:tabla</h2>
+  <div class="endpoint">
+    <span class="path"><span class="method">GET</span>/rest/v1/mediciones_ema | mediciones_cfr | mediciones_dc | mediciones_cs</span>
+    <p class="dim">Mediciones crudas de una estación puntual. Cada fila es un parámetro (temperatura, humedad, presión, etc.) en un instante dado.</p>
+    <table>
+      <tr><th>Parámetro</th><th>Descripción</th></tr>
+      <tr><td><code>select</code></td><td>Columnas a incluir, separadas por coma (ej. <code>codigo,parametro,valor,fecha_hora_ar</code>). Si se omite, trae todas.</td></tr>
+      <tr><td><code>order</code></td><td><code>campo.asc</code> o <code>campo.desc</code>. Ordena por fecha (asc/desc).</td></tr>
+      <tr><td><code>limit</code></td><td>Tope de filas. Default 100, máximo 5000.</td></tr>
+      <tr><td><code>codigo</code></td><td><code>eq.N</code> — filtra por código numérico de parámetro (estación EET).</td></tr>
+      <tr><td><code>parametro</code></td><td><code>eq.Nombre</code> — filtra por nombre de parámetro (ej. <code>eq.Temperatura</code>).</td></tr>
+      <tr><td><code>horas</code></td><td>Ventana relativa a "ahora", en horas (ej. <code>720</code> = últimos 30 días). Se ignora si se manda <code>desde</code> y/o <code>hasta</code>.</td></tr>
+      <tr><td><code>desde</code></td><td>Fecha/hora UTC de inicio, formato <code>YYYY-MM-DD</code> o <code>YYYY-MM-DD HH:MM:SS</code>. Rango absoluto en vez de relativo.</td></tr>
+      <tr><td><code>hasta</code></td><td>Fecha/hora UTC de fin, mismo formato que <code>desde</code>.</td></tr>
+      <tr><td><code>formato</code></td><td><code>csv</code> para descargar CSV en vez de JSON.</td></tr>
+    </table>
+    <pre>curl "https://ema-saladillo-api.fisicai-eureka-01.workers.dev/rest/v1/mediciones_cfr?parametro=eq.Temperatura&horas=168"
+
+curl "https://ema-saladillo-api.fisicai-eureka-01.workers.dev/rest/v1/mediciones_dc?desde=2026-08-01&hasta=2026-08-15&formato=csv" -O -J</pre>
+  </div>
+
+  <h2>GET /rest/v1/v_temperatura_comparativa</h2>
+  <div class="endpoint">
+    <span class="path"><span class="method">GET</span>/rest/v1/v_temperatura_comparativa</span>
+    <p class="dim">Temperatura promedio por hora de las 4 estaciones en columnas paralelas (<code>eet</code>, <code>cfr</code>, <code>dc</code>, <code>cs</code>), para comparar entre sí.</p>
+    <pre>curl "https://ema-saladillo-api.fisicai-eureka-01.workers.dev/rest/v1/v_temperatura_comparativa?horas=48"</pre>
+  </div>
+
+  <h2>GET /rest/v1/v_ema_armonizada</h2>
+  <div class="endpoint">
+    <span class="path"><span class="method">GET</span>/rest/v1/v_ema_armonizada</span>
+    <p class="dim">Un mismo parámetro (temperatura, humedad, presión, viento, lluvia, etc.) normalizado entre las 4 estaciones, una fila por estación y hora.</p>
+    <table>
+      <tr><th>Parámetro</th><th>Descripción</th></tr>
+      <tr><td><code>parametro</code></td><td><code>eq.Nombre</code> — uno de: Temperatura, Humedad, Presion, Velocidad Viento, Rafaga, Direccion Viento, Lluvia, Punto de Rocio, Radiacion Solar.</td></tr>
+      <tr><td><code>horas</code> / <code>limit</code> / <code>formato</code></td><td>Igual que en <code>/rest/v1/:tabla</code>.</td></tr>
+    </table>
+    <pre>curl "https://ema-saladillo-api.fisicai-eureka-01.workers.dev/rest/v1/v_ema_armonizada?parametro=eq.Lluvia&horas=720"</pre>
+  </div>
+
+  <h2>Notas</h2>
+  <p class="dim">No hace falta API key ni registro: los datos son meteorológicos públicos. Usá <code>&formato=csv</code> en cualquiera de las rutas de arriba para bajar directo un CSV en vez de parsear JSON. Los timestamps se guardan y devuelven en UTC (cada fila también trae <code>fecha_hora_ar</code> ya convertida a hora argentina, cuando el <code>select</code> la incluye). Si vas a reutilizar estos datos públicamente, agradecemos que menciones como fuente a <a href="https://ema.lemeit.ar" style="color:var(--accent)">ema.lemeit.ar</a> — Red Meteorológica de Saladillo.</p>
+</main>
+
+<footer>ema.lemeit.ar · Red Meteorológica de Saladillo</footer>
+
+</body>
+</html>
