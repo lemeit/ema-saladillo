@@ -1,5 +1,7 @@
 # Red EMA Saladillo
 
+[![sitio](https://img.shields.io/badge/sitio-emas.lemeit.ar-009688?style=flat-square)](https://emas.lemeit.ar) [![docs](https://img.shields.io/badge/docs-wiki.lemeit.ar-009688?style=flat-square)](https://wiki.lemeit.ar/red-ambiental/02-ema-saladillo/) [![API](https://img.shields.io/badge/API-pública-FF5722?style=flat-square)](https://emas.lemeit.ar/api.html) [![licencia](https://img.shields.io/badge/licencia-MIT-009688?style=flat-square)](#licencia)
+
 Sistema de adquisición y visualización de datos meteorológicos de 4 estaciones automáticas en Saladillo, Buenos Aires, Argentina. Publicado en [emas.lemeit.ar](https://emas.lemeit.ar).
 
 Es uno de tres proyectos de monitoreo ambiental que comparten la misma infraestructura de Cloudflare (Pages + Workers + D1), pensados para integrarse a futuro: este (meteorología), [aq.lemeit.ar](https://aq.lemeit.ar) (calidad del aire, sensores PurpleAir) y [agua-saladillo](https://github.com/lemeit/agua-saladillo) (calidad del agua, en desarrollo, pensado para wq.lemeit.ar).
